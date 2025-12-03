@@ -93,8 +93,20 @@ Native API key support with a user interface is under active development. Track 
 
 ### Setup
 
-1. **Install dependencies:**
+**For detailed platform-specific installation instructions, see [INSTALL.md](INSTALL.md)**
+
+Quick setup:
+
+1. **Create virtual environment and install dependencies:**
    ```bash
+   # macOS/Linux
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+
+   # Windows
+   python -m venv venv
+   venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
@@ -123,25 +135,27 @@ Native API key support with a user interface is under active development. Track 
 
 3. **Test the server:**
    ```bash
+   # Make sure venv is activated
    python planka_mcp.py
    ```
 
 ## Usage with Claude Desktop
 
-Add to your Claude Desktop MCP settings:
+**See [INSTALL.md](INSTALL.md) for complete installation instructions.**
 
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-**Linux**: `~/.config/Claude/claude_desktop_config.json`
+Config file locations:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-### macOS Configuration
+### macOS Configuration (using venv)
 
 ```json
 {
   "mcpServers": {
     "planka": {
-      "command": "python3",
-      "args": ["/Users/yourusername/path/to/planka_mcp.py"],
+      "command": "/absolute/path/to/planka-mcp/venv/bin/python",
+      "args": ["/absolute/path/to/planka-mcp/planka_mcp.py"],
       "env": {
         "PLANKA_BASE_URL": "https://planka.w22.io",
         "PLANKA_API_TOKEN": "your-token-here"
@@ -151,14 +165,14 @@ Add to your Claude Desktop MCP settings:
 }
 ```
 
-### Windows/Linux Configuration
+### Windows Configuration (using venv)
 
 ```json
 {
   "mcpServers": {
     "planka": {
-      "command": "python",
-      "args": ["/absolute/path/to/planka_mcp.py"],
+      "command": "C:\\path\\to\\planka-mcp\\venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\planka-mcp\\planka_mcp.py"],
       "env": {
         "PLANKA_BASE_URL": "https://planka.w22.io",
         "PLANKA_API_TOKEN": "your-token-here"
@@ -168,10 +182,11 @@ Add to your Claude Desktop MCP settings:
 }
 ```
 
-**Important**:
-- On macOS, use `python3` as the command
-- Replace `/absolute/path/to/planka_mcp.py` with the actual path to your installation
-- Ensure you have the required dependencies installed: `pip3 install -r requirements.txt` (macOS) or `pip install -r requirements.txt` (Windows/Linux)
+**Critical**:
+- Use the Python executable from your virtual environment (`.../venv/bin/python`)
+- Do NOT use system `python3` - it won't have the required dependencies
+- Replace paths with your actual installation location
+- Restart Claude Desktop after editing the config
 
 ## Usage Examples
 
