@@ -717,6 +717,48 @@ class FindAndGetCardInput(BaseModel):
         description="Output format: 'markdown' or 'json'"
     )
 
+class AddCardLabelInput(BaseModel):
+    """Input for adding a label to a card."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    card_id: str = Field(
+        ...,
+        description="Card ID to add label to",
+        min_length=1,
+        max_length=100
+    )
+    label_id: str = Field(
+        ...,
+        description="Label ID to add (get available labels from planka_get_workspace)",
+        min_length=1,
+        max_length=100
+    )
+
+class RemoveCardLabelInput(BaseModel):
+    """Input for removing a label from a card."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    card_id: str = Field(
+        ...,
+        description="Card ID to remove label from",
+        min_length=1,
+        max_length=100
+    )
+    label_id: str = Field(
+        ...,
+        description="Label ID to remove",
+        min_length=1,
+        max_length=100
+    )
+
 # ==================== HELPER FUNCTIONS ====================
 
 async def fetch_workspace_data() -> Dict:
@@ -988,7 +1030,7 @@ async def planka_find_and_get_card(params: FindAndGetCardInput) -> str:
             matching_cards = [
                 c for c in cards
                 if query_lower in c.get('name', '').lower()
-                or query_lower in c.get('description', '').lower()
+                or query_lower in (c.get('description') or '').lower()
             ]
         else:
             # Search across all boards - fetch workspace
@@ -1002,7 +1044,7 @@ async def planka_find_and_get_card(params: FindAndGetCardInput) -> str:
                 matching_cards.extend([
                     c for c in cards
                     if query_lower in c.get('name', '').lower()
-                    or query_lower in c.get('description', '').lower()
+                    or query_lower in (c.get('description') or '').lower()
                 ])
 
         # If no matches, return message
@@ -1155,23 +1197,35 @@ async def planka_create_card(params: CreateCardInput) -> str:
         - "Add new task 'Update docs' with description..." → Creates card with details
     '''
     try:
-        # Build request body
-        card_data = {"name": params.name}
+        # Get workspace to find board ID for this list
+        workspace = await cache.get_workspace(fetch_workspace_data)
+        list_info = workspace.get('lists', {}).get(params.list_id)
+
+        if not list_info:
+            return f"Error: List ID '{params.list_id}' not found. Use planka_get_workspace to see valid list IDs."
+
+        board_id = list_info.get('boardId')
+        if not board_id:
+            return f"Error: Could not determine board for list '{params.list_id}'."
+
+        # Build request body - listId and position are required
+        card_data = {
+            "listId": params.list_id,
+            "name": params.name,
+            "position": params.position if params.position is not None else 65535
+        }
 
         if params.description:
             card_data["description"] = params.description
         if params.due_date:
             card_data["dueDate"] = params.due_date
-        if params.position is not None:
-            card_data["position"] = params.position
 
-        # Create card
-        response = await api_client.post(f"lists/{params.list_id}/cards", card_data)
+        # Create card using correct endpoint
+        response = await api_client.post(f"boards/{board_id}/cards", card_data)
         card = response.get("item", {})
 
         # Invalidate board cache (board now has new card)
-        if card.get('boardId'):
-            cache.invalidate_board(card['boardId'])
+        cache.invalidate_board(board_id)
 
         # Return minimal confirmation
         return f"✓ Created card: **{card.get('name', 'Untitled')}** (ID: `{card.get('id', 'N/A')}`)"
@@ -1355,6 +1409,92 @@ async def planka_update_task(params: UpdateTaskInput) -> str:
         check = "[x]" if params.is_completed else "[ ]"
 
         return f"✓ Marked task as {status}: {check} **{task.get('name', 'Unnamed task')}** (ID: `{task.get('id', params.task_id)}`)"
+
+    except Exception as e:
+        return handle_api_error(e)
+
+@mcp.tool(
+    name="planka_add_card_label",
+    annotations={
+        "title": "Add Label to Card",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True
+    }
+)
+async def planka_add_card_label(params: AddCardLabelInput) -> str:
+    '''Add a label to a card.
+
+    Assigns an existing label to a card. Use planka_get_workspace to see available
+    labels and their IDs.
+
+    Args:
+        params (AddCardLabelInput): Card ID and label ID
+
+    Returns:
+        str: Confirmation with label name
+
+    Examples:
+        - "Add the 'Critical' label to card abc123" → Adds label to card
+        - "Label card xyz789 as 'In Progress'" → Adds label to card
+    '''
+    try:
+        # Add label to card
+        response = await api_client.post(
+            f"cards/{params.card_id}/labels",
+            {"labelId": params.label_id}
+        )
+
+        # Get workspace to find label name
+        workspace = await cache.get_workspace(fetch_workspace_data)
+        label_name = workspace.get('labels', {}).get(params.label_id, {}).get('name', 'Unknown')
+
+        # Invalidate card cache
+        cache.invalidate_card(params.card_id)
+
+        return f"✓ Added label **{label_name}** to card (Label ID: `{params.label_id}`)"
+
+    except Exception as e:
+        return handle_api_error(e)
+
+@mcp.tool(
+    name="planka_remove_card_label",
+    annotations={
+        "title": "Remove Label from Card",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True
+    }
+)
+async def planka_remove_card_label(params: RemoveCardLabelInput) -> str:
+    '''Remove a label from a card.
+
+    Removes a label assignment from a card.
+
+    Args:
+        params (RemoveCardLabelInput): Card ID and label ID
+
+    Returns:
+        str: Confirmation with label name
+
+    Examples:
+        - "Remove the 'Critical' label from card abc123" → Removes label
+        - "Unlabel card xyz789" → Removes label
+    '''
+    try:
+        # Get workspace to find label name before removing
+        workspace = await cache.get_workspace(fetch_workspace_data)
+        label_name = workspace.get('labels', {}).get(params.label_id, {}).get('name', 'Unknown')
+
+        # Remove label from card
+        await api_client.delete(f"cards/{params.card_id}/labels/{params.label_id}")
+
+        # Invalidate card cache
+        cache.invalidate_card(params.card_id)
+
+        return f"✓ Removed label **{label_name}** from card (Label ID: `{params.label_id}`)"
 
     except Exception as e:
         return handle_api_error(e)

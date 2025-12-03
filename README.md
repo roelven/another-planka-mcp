@@ -17,7 +17,7 @@ A high-performance Model Context Protocol (MCP) server for interacting with Plan
 - **Smart search**: Combined search + retrieval saves 37% tokens
 - **Minimal responses**: Write operations return concise confirmations
 
-### 9 Core Tools (Tier 0 + Tier 1)
+### 10 Core Tools (Tier 0 + Tier 1)
 
 **Read-Only Tools:**
 1. `planka_get_workspace` - Get complete workspace structure (projects, boards, lists, labels, users)
@@ -30,6 +30,8 @@ A high-performance Model Context Protocol (MCP) server for interacting with Plan
 6. `planka_update_card` - Update card details or move to different list
 7. `planka_add_task` - Add task to checklist (auto-creates task list if needed)
 8. `planka_update_task` - Mark task complete/incomplete
+9. `planka_add_card_label` - Add label to card
+10. `planka_remove_card_label` - Remove label from card
 
 ## Installation
 
@@ -325,6 +327,26 @@ Mark task as complete or incomplete.
 
 **Returns**: Confirmation with updated status
 
+### planka_add_card_label
+Add a label to a card.
+
+**Parameters:**
+- `card_id`: Card to add label to (required)
+- `label_id`: Label to add (required, get from planka_get_workspace)
+
+**Returns**: Confirmation with label name
+
+**Note**: Use planka_get_workspace to see available labels and their IDs
+
+### planka_remove_card_label
+Remove a label from a card.
+
+**Parameters:**
+- `card_id`: Card to remove label from (required)
+- `label_id`: Label to remove (required)
+
+**Returns**: Confirmation with label name
+
 ## Performance Characteristics
 
 ### Token Efficiency
@@ -417,14 +439,17 @@ python planka_mcp.py
 
 **Phase 1 (MVP) - COMPLETE**
 - ✅ All Tier 0 tools (workspace, caching)
-- ✅ All Tier 1 tools (core CRUD operations)
+- ✅ All Tier 1 tools (core CRUD operations + label management)
 - ✅ Token optimization features
 - ✅ Smart caching with invalidation
 - ✅ Comprehensive error handling
-- ✅ **100+ comprehensive tests with >80% coverage**
+- ✅ **120+ comprehensive tests with >80% coverage**
 - ✅ **CI/CD pipeline with automated testing**
+- ✅ **Bug fixes for card creation API (HTTP 422 error)**
+- ✅ **Bug fixes for card search with null descriptions**
+- ✅ **Label assignment functionality**
 
-**Total**: 9 tools implemented, fully tested, production-ready
+**Total**: 10 tools implemented, fully tested, production-ready
 
 ### Quality Assurance
 
