@@ -132,6 +132,26 @@ Add to your Claude Desktop MCP settings:
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+**Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+### macOS Configuration
+
+```json
+{
+  "mcpServers": {
+    "planka": {
+      "command": "python3",
+      "args": ["/Users/yourusername/path/to/planka_mcp.py"],
+      "env": {
+        "PLANKA_BASE_URL": "https://planka.w22.io",
+        "PLANKA_API_TOKEN": "your-token-here"
+      }
+    }
+  }
+}
+```
+
+### Windows/Linux Configuration
 
 ```json
 {
@@ -147,6 +167,11 @@ Add to your Claude Desktop MCP settings:
   }
 }
 ```
+
+**Important**:
+- On macOS, use `python3` as the command
+- Replace `/absolute/path/to/planka_mcp.py` with the actual path to your installation
+- Ensure you have the required dependencies installed: `pip3 install -r requirements.txt` (macOS) or `pip install -r requirements.txt` (Windows/Linux)
 
 ## Usage Examples
 
