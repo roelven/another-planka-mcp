@@ -747,7 +747,8 @@ class TestPlankaCreateCard:
             mock_planka_api_client.post.assert_called_once()
             call_args = mock_planka_api_client.post.call_args
             assert call_args[0][0] == "lists/list1/cards"
-            assert call_args[1]["json_data"]["name"] == "New Card"
+            # Second positional argument is the json_data
+            assert call_args[0][1]["name"] == "New Card"
 
     @pytest.mark.asyncio
     async def test_create_card_full(
@@ -780,7 +781,8 @@ class TestPlankaCreateCard:
 
             # Verify all fields were sent
             call_args = mock_planka_api_client.post.call_args
-            json_data = call_args[1]["json_data"]
+            # Second positional argument is the json_data
+            json_data = call_args[0][1]
             assert json_data["name"] == "Full Card"
             assert json_data["description"] == "Detailed description"
             assert json_data["dueDate"] == "2024-12-31T23:59:59Z"
@@ -870,7 +872,8 @@ class TestPlankaUpdateCard:
             mock_planka_api_client.patch.assert_called_once()
             call_args = mock_planka_api_client.patch.call_args
             assert call_args[0][0] == "cards/card1"
-            assert call_args[1]["json_data"]["name"] == "Updated Name"
+            # Second positional argument is the json_data
+            assert call_args[0][1]["name"] == "Updated Name"
 
     @pytest.mark.asyncio
     async def test_update_card_multiple_fields(
@@ -1186,7 +1189,8 @@ class TestPlankaUpdateTask:
             mock_planka_api_client.patch.assert_called_once()
             call_args = mock_planka_api_client.patch.call_args
             assert call_args[0][0] == "tasks/task1"
-            assert call_args[1]["json_data"]["isCompleted"] is True
+            # Second positional argument is the json_data
+            assert call_args[0][1]["isCompleted"] is True
 
     @pytest.mark.asyncio
     async def test_update_task_incomplete(

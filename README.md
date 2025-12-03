@@ -381,8 +381,20 @@ python planka_mcp.py
 - ✅ Token optimization features
 - ✅ Smart caching with invalidation
 - ✅ Comprehensive error handling
+- ✅ **100+ comprehensive tests with >80% coverage**
+- ✅ **CI/CD pipeline with automated testing**
 
-**Total**: 9 tools implemented, ready for production use
+**Total**: 9 tools implemented, fully tested, production-ready
+
+### Quality Assurance
+
+**All tests must pass.** This is enforced through:
+- Local pre-commit hooks (optional but recommended)
+- GitHub Actions CI on every push
+- Coverage threshold of 80% minimum
+- Tests run on Python 3.10, 3.11, and 3.12
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ## License
 
