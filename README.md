@@ -320,6 +320,33 @@ All errors return actionable messages:
 
 ## Development
 
+### Running Tests
+
+The project includes a comprehensive test suite with >90% code coverage.
+
+```bash
+# Install test dependencies
+pip install -r requirements.txt
+
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=planka_mcp --cov-report=html
+
+# View coverage report
+open htmlcov/index.html
+```
+
+**Test Coverage:**
+- 56+ comprehensive tests
+- Unit tests for all infrastructure components
+- Integration tests with mocked API calls
+- Input validation tests for all Pydantic models
+- Tests for all 9 tools covering happy paths, errors, and edge cases
+
+See [TESTING.md](TESTING.md) for detailed testing documentation.
+
 ### Test with MCP Inspector
 ```bash
 npx @modelcontextprotocol/inspector python planka_mcp.py

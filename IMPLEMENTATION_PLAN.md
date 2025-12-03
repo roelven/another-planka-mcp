@@ -1369,21 +1369,29 @@ MIT License - see LICENSE file
 
 ## Implementation Priority & Scope
 
-### Phase 1 (MVP) - Token-Optimized Core Tools
-Focus on the most impactful tools with built-in token optimizations:
+### Phase 1 (MVP) - Token-Optimized Core Tools + Testing
+Focus on the most impactful tools with built-in token optimizations AND comprehensive tests:
 
-**Tier 0 - Critical (MUST IMPLEMENT FIRST):**
+**Tier 0 - Critical Infrastructure (MUST IMPLEMENT FIRST):**
 1. ✅ **`planka_get_workspace`** - Single biggest token saver (50-66% reduction)
 2. ✅ **Caching system** - Infrastructure for workspace, labels, users (60-70% API call reduction)
+3. ✅ **Core infrastructure tests** - API client, caching, error handling, formatters
 
-**Tier 1 - Core Workflow:**
-3. ✅ **`planka_list_cards`** - With detail_level (preview/summary/detailed), response_context, label_filter, and cross-list support
-4. ✅ **`planka_find_and_get_card`** - Composite search + get (37% token savings)
-5. ✅ **`planka_get_card`** - With response_context parameter
-6. ✅ **`planka_create_card`** - Minimal response
-7. ✅ **`planka_update_card`** - Minimal response
-8. ✅ **`planka_add_task`** - Add tasks to checklist (heavily used in user's workflow)
-9. ✅ **`planka_update_task`** - Mark tasks complete/incomplete
+**Tier 1 - Core Workflow Tools:**
+4. ✅ **`planka_list_cards`** - With detail_level (preview/summary/detailed), response_context, label_filter, and cross-list support
+5. ✅ **`planka_find_and_get_card`** - Composite search + get (37% token savings)
+6. ✅ **`planka_get_card`** - With response_context parameter
+7. ✅ **`planka_create_card`** - Minimal response
+8. ✅ **`planka_update_card`** - Minimal response
+9. ✅ **`planka_add_task`** - Add tasks to checklist (heavily used in user's workflow)
+10. ✅ **`planka_update_task`** - Mark tasks complete/incomplete
+
+**Tier 1 - Testing Requirements:**
+11. **Unit tests for all 9 tools** - Test input validation, response formatting, error handling
+12. **Integration tests with mocked API** - Test tool workflows without hitting real Planka instance
+13. **Cache behavior tests** - Verify caching, invalidation, TTLs
+14. **Error handling tests** - All error paths covered
+15. **Performance tests** - Verify token efficiency claims
 
 **MVP Capabilities:**
 - Complete workspace discovery in 1 call (instead of 3-4)
@@ -1394,6 +1402,7 @@ Focus on the most impactful tools with built-in token optimizations:
 - Full CRUD operations on cards
 - Task management (add/update tasks on cards)
 - Smart caching reduces repeated API calls by 60-70%
+- **100% test coverage of critical paths**
 
 **Expected MVP Performance:**
 - Create a card: 1,200 tokens (vs 3,500 naive)
@@ -1402,15 +1411,21 @@ Focus on the most impactful tools with built-in token optimizations:
 - Browse 50 cards: ~2,500 tokens preview mode (vs 20,000+ detailed)
 - **Overall: 50-60% token reduction compared to naive implementation**
 
-### Phase 2 (Efficiency Boost) - Add Tier 2 Composite Tools
-8. `planka_get_board_overview` - Board structure without all cards (73% reduction)
-9. `planka_get_cards_batch` - Multi-card retrieval (40% reduction, 80% fewer calls)
+### Phase 2 (Efficiency Boost) - Add Tier 2 Composite Tools + Tests
+16. `planka_get_board_overview` - Board structure without all cards (73% reduction)
+17. `planka_get_cards_batch` - Multi-card retrieval (40% reduction, 80% fewer calls)
+18. **Tests for composite tools** - Unit + integration tests
 
-### Phase 3 (Extended) - Add Tier 3 & 4 Tools
+### Phase 3 (Extended) - Add Tier 3 & 4 Tools + Tests
 Add collaboration, organization, and task management tools once core MVP is proven.
+19. Collaboration tools (members, labels, comments)
+20. **Tests for collaboration features**
 
-### Phase 4 (Complete) - Add Tier 5 Tools
+### Phase 4 (Complete) - Add Tier 5 Tools + Tests
 Add advanced features for power users.
+21. Advanced tools (attachments, boards, lists)
+22. **End-to-end integration tests**
+23. **Performance benchmarking suite**
 
 ---
 
@@ -1440,17 +1455,35 @@ The Planka MCP server will be considered successful when:
 15. ✅ Character limit enforcement (25,000) with graceful truncation
 16. ✅ Actionable truncation messages guide agents to use filters/pagination
 
-### **Testing & Documentation**
-17. ✅ README documentation is complete with token efficiency benefits highlighted
-18. ✅ Evaluation questions defined and answers verified
-19. ✅ Server runs successfully and can be tested with MCP Inspector
-20. ✅ Cache statistics available for monitoring performance
+### **Testing & Quality Assurance** (NEW - CRITICAL)
+17. ⬜ **Unit tests**: 100% coverage of all 9 tools
+18. ⬜ **Integration tests**: All tool workflows tested with mocked API
+19. ⬜ **Cache tests**: Caching behavior, invalidation, TTLs verified
+20. ⬜ **Error handling tests**: All error paths covered
+21. ⬜ **Input validation tests**: Pydantic models validated with edge cases
+22. ⬜ **Performance tests**: Token efficiency verified with benchmarks
+23. ⬜ **CI/CD pipeline**: Automated testing on every commit
+24. ⬜ **Test coverage report**: >90% code coverage
+
+### **Documentation**
+25. ✅ README documentation is complete with token efficiency benefits highlighted
+26. ✅ API credentials documentation with curl examples
+27. ✅ Evaluation questions defined and answers verified
+28. ⬜ Test documentation explaining how to run tests
+29. ⬜ Contributing guide with testing requirements
+
+### **Operational Readiness**
+30. ⬜ Server runs successfully and can be tested with MCP Inspector
+31. ⬜ Cache statistics available for monitoring performance
+32. ⬜ Logging implemented for debugging
+33. ⬜ Health check endpoint (if supported by FastMCP)
 
 ### **Performance Targets** (vs naive implementation)
-21. ✅ 50-60% reduction in token usage for typical workflows
-22. ✅ 60-70% reduction in API calls due to caching
-23. ✅ 90%+ cache hit rate for workspace queries in multi-turn conversations
-24. ✅ <1,500 tokens for card creation workflow (vs 3,500 naive)
+34. ✅ 50-60% reduction in token usage for typical workflows
+35. ✅ 60-70% reduction in API calls due to caching
+36. ✅ 90%+ cache hit rate for workspace queries in multi-turn conversations
+37. ✅ <1,500 tokens for card creation workflow (vs 3,500 naive)
+38. ⬜ Performance verified through automated benchmarks
 
 ---
 
