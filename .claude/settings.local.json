@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(mcp-builder)",
+      "WebFetch(domain:plankanban.github.io)",
+      "WebSearch",
+      "WebFetch(domain:planka.w22.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docs.planka.cloud)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
