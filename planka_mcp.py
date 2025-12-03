@@ -1360,8 +1360,7 @@ async def planka_update_task(params: UpdateTaskInput) -> str:
 
 # ==================== SERVER LIFECYCLE ====================
 
-@mcp.server.on_startup()
-async def on_startup():
+async def initialize_server():
     """Initialize API client and cache system on server startup."""
     global api_client, cache
 
@@ -1372,22 +1371,30 @@ async def on_startup():
         api_client = PlankaAPIClient(base_url, token)
         cache = PlankaCache()
 
-        print(f"Planka MCP Server initialized successfully")
-        print(f"Connected to: {base_url}")
+        print(f"Planka MCP Server initialized successfully", flush=True)
+        print(f"Connected to: {base_url}", flush=True)
     except Exception as e:
-        print(f"Failed to initialize server: {e}")
+        print(f"Failed to initialize server: {e}", flush=True)
         raise
 
-@mcp.server.on_shutdown()
-async def on_shutdown():
+async def cleanup_server():
     """Clean up resources on server shutdown."""
     global api_client
 
     if api_client:
         await api_client.close()
-        print("Planka MCP Server shut down successfully")
+        print("Planka MCP Server shut down successfully", flush=True)
 
 # ==================== MAIN ====================
 
 if __name__ == "__main__":
-    mcp.run()
+    import asyncio
+
+    # Initialize before running
+    asyncio.run(initialize_server())
+
+    try:
+        mcp.run()
+    finally:
+        # Cleanup on exit
+        asyncio.run(cleanup_server())
