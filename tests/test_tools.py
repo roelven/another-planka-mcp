@@ -717,11 +717,14 @@ class TestPlankaCreateCard:
 
     @pytest.mark.asyncio
     async def test_create_card_minimal(
-        self, mock_planka_api_client, mock_cache
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test creating card with minimal fields."""
         with patch('planka_mcp.api_client', mock_planka_api_client), \
              patch('planka_mcp.cache', mock_cache):
+
+            # Mock workspace response to find board_id for list
+            mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
 
             created_card = {
                 "item": {
@@ -743,20 +746,26 @@ class TestPlankaCreateCard:
             assert "New Card" in result
             assert "new_card_id" in result
 
-            # Verify API was called correctly
+            # Verify API was called correctly with new endpoint
             mock_planka_api_client.post.assert_called_once()
             call_args = mock_planka_api_client.post.call_args
-            assert call_args[0][0] == "lists/list1/cards"
+            assert call_args[0][0] == "boards/board1/cards"
             # Second positional argument is the json_data
-            assert call_args[0][1]["name"] == "New Card"
+            json_data = call_args[0][1]
+            assert json_data["name"] == "New Card"
+            assert json_data["listId"] == "list1"
+            assert json_data["position"] == 65535  # Default position
 
     @pytest.mark.asyncio
     async def test_create_card_full(
-        self, mock_planka_api_client, mock_cache
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test creating card with all fields."""
         with patch('planka_mcp.api_client', mock_planka_api_client), \
              patch('planka_mcp.cache', mock_cache):
+
+            # Mock workspace response to find board_id for list
+            mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
 
             created_card = {
                 "item": {
@@ -783,6 +792,7 @@ class TestPlankaCreateCard:
             call_args = mock_planka_api_client.post.call_args
             # Second positional argument is the json_data
             json_data = call_args[0][1]
+            assert json_data["listId"] == "list1"
             assert json_data["name"] == "Full Card"
             assert json_data["description"] == "Detailed description"
             assert json_data["dueDate"] == "2024-12-31T23:59:59Z"
@@ -790,11 +800,14 @@ class TestPlankaCreateCard:
 
     @pytest.mark.asyncio
     async def test_create_card_invalidates_cache(
-        self, mock_planka_api_client, mock_cache
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test creating card invalidates board cache."""
         with patch('planka_mcp.api_client', mock_planka_api_client), \
              patch('planka_mcp.cache', mock_cache):
+
+            # Mock workspace response to find board_id for list
+            mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
 
             created_card = {
                 "item": {
@@ -1449,3 +1462,114 @@ class TestEdgeCases:
 
             # Should return empty result
             assert "No cards found" in result or "0 found" in result
+
+
+class TestPlankaAddCardLabel:
+    """Test planka_add_card_label tool."""
+
+    @pytest.mark.asyncio
+    async def test_add_label_success(
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
+    ):
+        """Test adding a label to a card."""
+        with patch('planka_mcp.api_client', mock_planka_api_client), \
+             patch('planka_mcp.cache', mock_cache):
+
+            # Mock workspace to get label name
+            mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
+
+            response = {"item": {"id": "cardLabel123"}}
+            mock_planka_api_client.post = AsyncMock(return_value=response)
+            mock_cache.invalidate_card = Mock()
+
+            from planka_mcp import planka_add_card_label, AddCardLabelInput
+
+            params = AddCardLabelInput(
+                card_id="card1",
+                label_id="label1"
+            )
+            result = await planka_add_card_label(params)
+
+            # Verify confirmation message
+            assert "Added label" in result
+            assert "Bug" in result  # Label name from sample data
+
+            # Verify API was called correctly
+            mock_planka_api_client.post.assert_called_once()
+            call_args = mock_planka_api_client.post.call_args
+            assert call_args[0][0] == "cards/card1/labels"
+            assert call_args[0][1]["labelId"] == "label1"
+
+            # Verify cache was invalidated
+            mock_cache.invalidate_card.assert_called_once_with("card1")
+
+    @pytest.mark.asyncio
+    async def test_add_label_api_error(
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
+    ):
+        """Test adding label with API error."""
+        with patch('planka_mcp.api_client', mock_planka_api_client), \
+             patch('planka_mcp.cache', mock_cache):
+
+            mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
+            mock_planka_api_client.post = AsyncMock(side_effect=Exception("API Error"))
+
+            from planka_mcp import planka_add_card_label, AddCardLabelInput
+
+            params = AddCardLabelInput(card_id="card1", label_id="label1")
+            result = await planka_add_card_label(params)
+
+            assert "Error" in result
+
+
+class TestPlankaRemoveCardLabel:
+    """Test planka_remove_card_label tool."""
+
+    @pytest.mark.asyncio
+    async def test_remove_label_success(
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
+    ):
+        """Test removing a label from a card."""
+        with patch('planka_mcp.api_client', mock_planka_api_client), \
+             patch('planka_mcp.cache', mock_cache):
+
+            # Mock workspace to get label name
+            mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
+            mock_planka_api_client.delete = AsyncMock()
+            mock_cache.invalidate_card = Mock()
+
+            from planka_mcp import planka_remove_card_label, RemoveCardLabelInput
+
+            params = RemoveCardLabelInput(
+                card_id="card1",
+                label_id="label1"
+            )
+            result = await planka_remove_card_label(params)
+
+            # Verify confirmation message
+            assert "Removed label" in result
+            assert "Bug" in result  # Label name from sample data
+
+            # Verify API was called correctly
+            mock_planka_api_client.delete.assert_called_once_with("cards/card1/labels/label1")
+
+            # Verify cache was invalidated
+            mock_cache.invalidate_card.assert_called_once_with("card1")
+
+    @pytest.mark.asyncio
+    async def test_remove_label_api_error(
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
+    ):
+        """Test removing label with API error."""
+        with patch('planka_mcp.api_client', mock_planka_api_client), \
+             patch('planka_mcp.cache', mock_cache):
+
+            mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
+            mock_planka_api_client.delete = AsyncMock(side_effect=Exception("API Error"))
+
+            from planka_mcp import planka_remove_card_label, RemoveCardLabelInput
+
+            params = RemoveCardLabelInput(card_id="card1", label_id="label1")
+            result = await planka_remove_card_label(params)
+
+            assert "Error" in result

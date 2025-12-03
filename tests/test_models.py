@@ -16,6 +16,8 @@ from planka_mcp import (
     AddTaskInput,
     UpdateTaskInput,
     FindAndGetCardInput,
+    AddCardLabelInput,
+    RemoveCardLabelInput,
     ResponseFormat,
     DetailLevel,
     ResponseContext
@@ -323,6 +325,94 @@ class TestFindAndGetCardInput:
         """Test query exceeding max length."""
         with pytest.raises(ValidationError):
             FindAndGetCardInput(query="A" * 201)
+
+
+class TestAddCardLabelInput:
+    """Test AddCardLabelInput model."""
+
+    def test_valid_input(self):
+        """Test valid input."""
+        input_data = AddCardLabelInput(
+            card_id="card123",
+            label_id="label456"
+        )
+
+        assert input_data.card_id == "card123"
+        assert input_data.label_id == "label456"
+
+    def test_missing_card_id(self):
+        """Test missing required card_id."""
+        with pytest.raises(ValidationError):
+            AddCardLabelInput(label_id="label456")
+
+    def test_missing_label_id(self):
+        """Test missing required label_id."""
+        with pytest.raises(ValidationError):
+            AddCardLabelInput(card_id="card123")
+
+    def test_empty_card_id(self):
+        """Test empty card_id."""
+        with pytest.raises(ValidationError):
+            AddCardLabelInput(card_id="", label_id="label456")
+
+    def test_empty_label_id(self):
+        """Test empty label_id."""
+        with pytest.raises(ValidationError):
+            AddCardLabelInput(card_id="card123", label_id="")
+
+    def test_card_id_too_long(self):
+        """Test card_id exceeding max length."""
+        with pytest.raises(ValidationError):
+            AddCardLabelInput(card_id="A" * 101, label_id="label456")
+
+    def test_label_id_too_long(self):
+        """Test label_id exceeding max length."""
+        with pytest.raises(ValidationError):
+            AddCardLabelInput(card_id="card123", label_id="A" * 101)
+
+
+class TestRemoveCardLabelInput:
+    """Test RemoveCardLabelInput model."""
+
+    def test_valid_input(self):
+        """Test valid input."""
+        input_data = RemoveCardLabelInput(
+            card_id="card123",
+            label_id="label456"
+        )
+
+        assert input_data.card_id == "card123"
+        assert input_data.label_id == "label456"
+
+    def test_missing_card_id(self):
+        """Test missing required card_id."""
+        with pytest.raises(ValidationError):
+            RemoveCardLabelInput(label_id="label456")
+
+    def test_missing_label_id(self):
+        """Test missing required label_id."""
+        with pytest.raises(ValidationError):
+            RemoveCardLabelInput(card_id="card123")
+
+    def test_empty_card_id(self):
+        """Test empty card_id."""
+        with pytest.raises(ValidationError):
+            RemoveCardLabelInput(card_id="", label_id="label456")
+
+    def test_empty_label_id(self):
+        """Test empty label_id."""
+        with pytest.raises(ValidationError):
+            RemoveCardLabelInput(card_id="card123", label_id="")
+
+    def test_card_id_too_long(self):
+        """Test card_id exceeding max length."""
+        with pytest.raises(ValidationError):
+            RemoveCardLabelInput(card_id="A" * 101, label_id="label456")
+
+    def test_label_id_too_long(self):
+        """Test label_id exceeding max length."""
+        with pytest.raises(ValidationError):
+            RemoveCardLabelInput(card_id="card123", label_id="A" * 101)
 
 
 class TestEnums:
