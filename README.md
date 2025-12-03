@@ -36,7 +36,60 @@ A high-performance Model Context Protocol (MCP) server for interacting with Plan
 ### Prerequisites
 - Python 3.10+
 - Access to a Planka instance
-- Planka API credentials (token, API key, or email/password)
+- Planka API credentials (see below)
+
+### Obtaining API Credentials
+
+**Important**: Planka does not currently have a UI for generating API keys. This feature is under development ([GitHub Issue #945](https://github.com/plankanban/planka/issues/945)). You have three authentication options:
+
+#### Option 1: Access Token via API (Recommended)
+
+Generate a JWT access token by authenticating via API:
+
+```bash
+curl -X POST https://your-planka-instance.com/api/access-tokens \
+  -H "Content-Type: application/json" \
+  -d '{
+    "emailOrUsername": "your-email@example.com",
+    "password": "your-password"
+  }'
+```
+
+**Response:**
+```json
+{
+  "item": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+Copy the `accessToken` value and use it as `PLANKA_API_TOKEN` in your `.env` file.
+
+**Note**: JWT tokens may expire. If you get authentication errors, generate a new token.
+
+#### Option 2: Email/Password (Fallback)
+
+Use your Planka login credentials directly. The MCP server will authenticate automatically at startup:
+
+```bash
+PLANKA_EMAIL=your-email@example.com
+PLANKA_PASSWORD=your-password
+```
+
+**Security Note**: This stores credentials in plaintext in your `.env` file. Use with caution.
+
+#### Option 3: API Key (Coming Soon)
+
+Native API key support with a user interface is under active development. Track progress:
+- [GitHub Issue #945 - API Key support](https://github.com/plankanban/planka/issues/945)
+- [Pull Request #1254 - Add API key authentication](https://github.com/plankanban/planka/pull/1254)
+
+**User Requirements:**
+- Any registered Planka user can authenticate
+- No special permissions or admin role required
+- API access permissions match your Planka user permissions
+- Admin users have full access; regular users can only access boards they're members of
 
 ### Setup
 
@@ -57,13 +110,13 @@ A high-performance Model Context Protocol (MCP) server for interacting with Plan
    PLANKA_BASE_URL=https://planka.example.com
 
    # Authentication (choose one method)
-   # Option 1: Access Token (recommended)
+   # Option 1: Access Token (recommended - see "Obtaining API Credentials" above)
    PLANKA_API_TOKEN=your-access-token-here
 
-   # Option 2: API Key
+   # Option 2: API Key (NOT YET AVAILABLE - under development)
    # PLANKA_API_KEY=your-api-key-here
 
-   # Option 3: Email/Password (least secure)
+   # Option 3: Email/Password (fallback, less secure)
    # PLANKA_EMAIL=your-email@example.com
    # PLANKA_PASSWORD=your-password
    ```
