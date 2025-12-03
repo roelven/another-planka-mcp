@@ -17,6 +17,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
 from dataclasses import dataclass
 import os
+import sys
 import json
 import time
 import httpx
@@ -1371,10 +1372,10 @@ async def initialize_server():
         api_client = PlankaAPIClient(base_url, token)
         cache = PlankaCache()
 
-        print(f"Planka MCP Server initialized successfully", flush=True)
-        print(f"Connected to: {base_url}", flush=True)
+        print(f"Planka MCP Server initialized successfully", file=sys.stderr, flush=True)
+        print(f"Connected to: {base_url}", file=sys.stderr, flush=True)
     except Exception as e:
-        print(f"Failed to initialize server: {e}", flush=True)
+        print(f"Failed to initialize server: {e}", file=sys.stderr, flush=True)
         raise
 
 async def cleanup_server():
@@ -1383,7 +1384,7 @@ async def cleanup_server():
 
     if api_client:
         await api_client.close()
-        print("Planka MCP Server shut down successfully", flush=True)
+        print("Planka MCP Server shut down successfully", file=sys.stderr, flush=True)
 
 # ==================== MAIN ====================
 
