@@ -1312,8 +1312,14 @@ async def planka_update_card(params: UpdateCardInput) -> str:
             update_data["dueDate"] = params.due_date
         if params.list_id is not None:
             update_data["listId"] = params.list_id
+            # When moving to different list, position is REQUIRED by Planka API
+            # If not provided, use default position at end of list
+            if params.position is None:
+                update_data["position"] = 65535
         if params.position is not None:
             update_data["position"] = params.position
+
+        print(f"[DEBUG] Updating card {params.card_id} with data: {update_data}", file=sys.stderr, flush=True)
 
         # Update card
         response = await api_client.patch(f"cards/{params.card_id}", update_data)
