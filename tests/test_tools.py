@@ -749,14 +749,14 @@ class TestPlankaCreateCard:
             assert "New Card" in result
             assert "new_card_id" in result
 
-            # Verify API was called correctly with new endpoint
+            # Verify API was called correctly with correct endpoint
             mock_planka_api_client.post.assert_called_once()
             call_args = mock_planka_api_client.post.call_args
-            assert call_args[0][0] == "boards/board1/cards"
+            assert call_args[0][0] == "lists/list1/cards"
             # Second positional argument is the json_data
             json_data = call_args[0][1]
+            assert json_data["type"] == "project"  # Required field
             assert json_data["name"] == "New Card"
-            assert json_data["listId"] == "list1"
             assert json_data["position"] == 65535  # Default position
 
     @pytest.mark.asyncio
@@ -793,9 +793,10 @@ class TestPlankaCreateCard:
 
             # Verify all fields were sent
             call_args = mock_planka_api_client.post.call_args
+            assert call_args[0][0] == "lists/list1/cards"
             # Second positional argument is the json_data
             json_data = call_args[0][1]
-            assert json_data["listId"] == "list1"
+            assert json_data["type"] == "project"  # Required field
             assert json_data["name"] == "Full Card"
             assert json_data["description"] == "Detailed description"
             assert json_data["dueDate"] == "2024-12-31T23:59:59Z"
