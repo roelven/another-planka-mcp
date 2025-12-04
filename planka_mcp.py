@@ -1239,28 +1239,19 @@ async def planka_create_card(params: CreateCardInput) -> str:
         - "Add new task 'Update docs' with description..." → Creates card with details
     '''
     try:
-        # Get workspace to find board ID for this list
+        # Verify list exists in workspace
         workspace = await cache.get_workspace(fetch_workspace_data)
-        print(f"[DEBUG] Card creation - List ID requested: {params.list_id}", file=sys.stderr, flush=True)
-
         list_info = workspace.get('lists', {}).get(params.list_id)
-        print(f"[DEBUG] List info found: {list_info}", file=sys.stderr, flush=True)
 
         if not list_info:
-            # Log all available list IDs to help debug
-            available_lists = list(workspace.get('lists', {}).keys())
-            print(f"[DEBUG] Available list IDs in workspace: {available_lists[:10]}", file=sys.stderr, flush=True)
             return f"Error: List ID '{params.list_id}' not found. Use planka_get_workspace to see valid list IDs."
 
         board_id = list_info.get('boardId')
-        print(f"[DEBUG] Board ID extracted: {board_id}", file=sys.stderr, flush=True)
 
-        if not board_id:
-            return f"Error: Could not determine board for list '{params.list_id}'."
-
-        # Build request body - listId and position are required
+        # Build request body for /api/lists/:listId/cards endpoint
+        # Required: type (project or story), name, position
         card_data = {
-            "listId": params.list_id,
+            "type": "project",  # Required field - use "project" as default
             "name": params.name,
             "position": params.position if params.position is not None else 65535
         }
@@ -1270,24 +1261,15 @@ async def planka_create_card(params: CreateCardInput) -> str:
         if params.due_date:
             card_data["dueDate"] = params.due_date
 
-        print(f"[DEBUG] Creating card with data: {card_data}", file=sys.stderr, flush=True)
-        print(f"[DEBUG] API endpoint: boards/{board_id}/cards", file=sys.stderr, flush=True)
+        # Create card using correct endpoint: POST /api/lists/:listId/cards
+        response = await api_client.post(f"lists/{params.list_id}/cards", card_data)
+        card = response.get("item", {})
 
-        # Create card using correct endpoint
-        try:
-            response = await api_client.post(f"boards/{board_id}/cards", card_data)
-            card = response.get("item", {})
+        # Invalidate board cache (board now has new card)
+        cache.invalidate_board(board_id)
 
-            # Invalidate board cache (board now has new card)
-            cache.invalidate_board(board_id)
-
-            # Return minimal confirmation
-            return f"✓ Created card: **{card.get('name', 'Untitled')}** (ID: `{card.get('id', 'N/A')}`)"
-        except httpx.HTTPStatusError as e:
-            print(f"[DEBUG] API Error Response Status: {e.response.status_code}", file=sys.stderr, flush=True)
-            print(f"[DEBUG] API Error Response Body: {e.response.text}", file=sys.stderr, flush=True)
-            print(f"[DEBUG] API Error Response URL: {e.response.url}", file=sys.stderr, flush=True)
-            raise
+        # Return minimal confirmation
+        return f"✓ Created card: **{card.get('name', 'Untitled')}** (ID: `{card.get('id', 'N/A')}`)"
 
     except Exception as e:
         return handle_api_error(e)
