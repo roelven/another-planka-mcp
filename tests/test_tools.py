@@ -400,6 +400,7 @@ class TestPlankaFindAndGetCard:
                 "included": {
                     "labels": [{"id": "label1", "name": "Bug"}],
                     "users": [{"id": "user1", "name": "Test User"}],
+                    "cardLabels": [{"id": "cardLabel1", "cardId": "card1", "labelId": "label1"}],
                     "taskLists": sample_card_data["taskLists"],
                     "comments": sample_card_data["comments"],
                     "attachments": []
@@ -519,6 +520,7 @@ class TestPlankaFindAndGetCard:
                 "included": {
                     "labels": [],
                     "users": [],
+                    "cardLabels": [],
                     "taskLists": [],
                     "comments": [],
                     "attachments": []
@@ -561,6 +563,7 @@ class TestPlankaFindAndGetCard:
                 "included": {
                     "labels": [],
                     "users": [],
+                    "cardLabels": [],
                     "taskLists": [],
                     "comments": [],
                     "attachments": []
@@ -1393,11 +1396,13 @@ class TestEdgeCases:
                 "name": "Bare Card",
                 "listId": "list1",
                 "boardId": "board1",
-                "labelIds": [],
                 "memberIds": [],
                 "taskLists": [],
                 "comments": [],
-                "attachments": []
+                "attachments": [],
+                "_included_cardLabels": [],
+                "_included_labels": [],
+                "_included_users": []
             }
 
             mock_cache.get_card = AsyncMock(return_value=card_no_labels)
