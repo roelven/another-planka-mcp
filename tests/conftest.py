@@ -109,7 +109,6 @@ def sample_card_data():
         "dueDate": "2024-12-31T23:59:59Z",
         "createdAt": "2024-01-01T00:00:00Z",
         "updatedAt": "2024-01-02T00:00:00Z",
-        "labelIds": ["label1"],
         "memberIds": ["user1"],
         "taskLists": [
             {
@@ -157,7 +156,6 @@ def sample_board_response():
                     "name": "Test Card 1",
                     "listId": "list1",
                     "boardId": "board1",
-                    "labelIds": ["label1"],
                     "memberIds": ["user1"],
                     "taskLists": [],
                     "comments": [],
@@ -168,12 +166,15 @@ def sample_board_response():
                     "name": "Test Card 2",
                     "listId": "list2",
                     "boardId": "board1",
-                    "labelIds": ["label2"],
                     "memberIds": [],
                     "taskLists": [],
                     "comments": [],
                     "attachments": []
                 }
+            ],
+            "cardLabels": [
+                {"id": "cardLabel1", "cardId": "card1", "labelId": "label1"},
+                {"id": "cardLabel2", "cardId": "card2", "labelId": "label2"}
             ],
             "users": [
                 {"id": "user1", "name": "Test User", "username": "testuser"}

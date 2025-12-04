@@ -302,8 +302,10 @@ class ResponseFormatter:
     def format_card_preview(card: Dict, context: Dict) -> str:
         """Format card in preview mode (~50 tokens)."""
         list_name = context.get('lists', {}).get(card.get('listId'), {}).get('name', 'Unknown List')
+        # Get label IDs from card_labels mapping (cardLabels join table)
+        card_label_ids = context.get('card_labels', {}).get(card.get('id'), [])
         labels = [context.get('labels', {}).get(label_id, {}).get('name', '')
-                  for label_id in card.get('labelIds', [])]
+                  for label_id in card_label_ids]
 
         task_progress = ResponseFormatter.format_task_progress(card.get('taskLists', []))
 
@@ -319,8 +321,10 @@ class ResponseFormatter:
     def format_card_summary(card: Dict, context: Dict) -> str:
         """Format card in summary mode (~200 tokens)."""
         list_name = context.get('lists', {}).get(card.get('listId'), {}).get('name', 'Unknown List')
+        # Get label IDs from card_labels mapping (cardLabels join table)
+        card_label_ids = context.get('card_labels', {}).get(card.get('id'), [])
         labels = [context.get('labels', {}).get(label_id, {}).get('name', '')
-                  for label_id in card.get('labelIds', [])]
+                  for label_id in card_label_ids]
         members = [context.get('users', {}).get(user_id, {}).get('name', '')
                    for user_id in card.get('memberIds', [])]
 
@@ -346,8 +350,10 @@ class ResponseFormatter:
     def format_card_detailed(card: Dict, context: Dict) -> str:
         """Format card in detailed mode (~400 tokens)."""
         list_name = context.get('lists', {}).get(card.get('listId'), {}).get('name', 'Unknown List')
+        # Get label IDs from card_labels mapping (cardLabels join table)
+        card_label_ids = context.get('card_labels', {}).get(card.get('id'), [])
         labels = [context.get('labels', {}).get(label_id, {}).get('name', '')
-                  for label_id in card.get('labelIds', [])]
+                  for label_id in card_label_ids]
         members = [context.get('users', {}).get(user_id, {}).get('name', '')
                    for user_id in card.get('memberIds', [])]
 
@@ -933,10 +939,22 @@ async def planka_list_cards(params: ListCardsInput) -> str:
         labels_map = {lbl["id"]: lbl for lbl in included.get("labels", [])}
         users_map = {usr["id"]: usr for usr in included.get("users", [])}
 
+        # Build card labels mapping from cardLabels join table
+        # Planka uses normalized structure: cardLabels = [{id, cardId, labelId}, ...]
+        card_labels_map = {}
+        for card_label in included.get("cardLabels", []):
+            card_id = card_label.get("cardId")
+            label_id = card_label.get("labelId")
+            if card_id and label_id:
+                if card_id not in card_labels_map:
+                    card_labels_map[card_id] = []
+                card_labels_map[card_id].append(label_id)
+
         context = {
             'lists': lists_map,
             'labels': labels_map,
             'users': users_map,
+            'card_labels': card_labels_map,
             'board_name': board.get("name", "Unknown Board")
         }
 
@@ -954,7 +972,7 @@ async def planka_list_cards(params: ListCardsInput) -> str:
                 c for c in cards
                 if any(
                     label_lower in labels_map.get(label_id, {}).get('name', '').lower()
-                    for label_id in c.get('labelIds', [])
+                    for label_id in card_labels_map.get(c.get('id'), [])
                 )
             ]
 
@@ -1061,10 +1079,22 @@ async def planka_find_and_get_card(params: FindAndGetCardInput) -> str:
 
             # Build context
             workspace = await cache.get_workspace(fetch_workspace_data)
+
+            # Build card labels mapping from cardLabels join table
+            card_labels_map = {}
+            for card_label in included.get("cardLabels", []):
+                card_id = card_label.get("cardId")
+                label_id = card_label.get("labelId")
+                if card_id and label_id:
+                    if card_id not in card_labels_map:
+                        card_labels_map[card_id] = []
+                    card_labels_map[card_id].append(label_id)
+
             context = {
                 'lists': workspace.get('lists', {}),
                 'labels': {lbl["id"]: lbl for lbl in included.get("labels", [])},
                 'users': {usr["id"]: usr for usr in included.get("users", [])},
+                'card_labels': card_labels_map,
                 'board_name': workspace.get('boards', {}).get(full_card.get('boardId'), {}).get('name', 'Unknown Board')
             }
 
@@ -1136,6 +1166,7 @@ async def planka_get_card(params: GetCardInput) -> str:
             full_card['attachments'] = included.get('attachments', [])
             full_card['_included_labels'] = included.get('labels', [])
             full_card['_included_users'] = included.get('users', [])
+            full_card['_included_cardLabels'] = included.get('cardLabels', [])
 
             return full_card
 
@@ -1153,10 +1184,21 @@ async def planka_get_card(params: GetCardInput) -> str:
         if not users_map:
             users_map = workspace.get('users', {})
 
+        # Build card labels mapping from cardLabels join table
+        card_labels_map = {}
+        for card_label in card.get('_included_cardLabels', []):
+            card_id = card_label.get("cardId")
+            label_id = card_label.get("labelId")
+            if card_id and label_id:
+                if card_id not in card_labels_map:
+                    card_labels_map[card_id] = []
+                card_labels_map[card_id].append(label_id)
+
         context = {
             'lists': workspace.get('lists', {}),
             'labels': labels_map,
             'users': users_map,
+            'card_labels': card_labels_map,
             'board_name': workspace.get('boards', {}).get(card.get('boardId'), {}).get('name', 'Unknown Board')
         }
 
@@ -1199,12 +1241,20 @@ async def planka_create_card(params: CreateCardInput) -> str:
     try:
         # Get workspace to find board ID for this list
         workspace = await cache.get_workspace(fetch_workspace_data)
+        print(f"[DEBUG] Card creation - List ID requested: {params.list_id}", file=sys.stderr, flush=True)
+
         list_info = workspace.get('lists', {}).get(params.list_id)
+        print(f"[DEBUG] List info found: {list_info}", file=sys.stderr, flush=True)
 
         if not list_info:
+            # Log all available list IDs to help debug
+            available_lists = list(workspace.get('lists', {}).keys())
+            print(f"[DEBUG] Available list IDs in workspace: {available_lists[:10]}", file=sys.stderr, flush=True)
             return f"Error: List ID '{params.list_id}' not found. Use planka_get_workspace to see valid list IDs."
 
         board_id = list_info.get('boardId')
+        print(f"[DEBUG] Board ID extracted: {board_id}", file=sys.stderr, flush=True)
+
         if not board_id:
             return f"Error: Could not determine board for list '{params.list_id}'."
 
@@ -1219,6 +1269,9 @@ async def planka_create_card(params: CreateCardInput) -> str:
             card_data["description"] = params.description
         if params.due_date:
             card_data["dueDate"] = params.due_date
+
+        print(f"[DEBUG] Creating card with data: {card_data}", file=sys.stderr, flush=True)
+        print(f"[DEBUG] API endpoint: boards/{board_id}/cards", file=sys.stderr, flush=True)
 
         # Create card using correct endpoint
         response = await api_client.post(f"boards/{board_id}/cards", card_data)
