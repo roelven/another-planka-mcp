@@ -1274,14 +1274,20 @@ async def planka_create_card(params: CreateCardInput) -> str:
         print(f"[DEBUG] API endpoint: boards/{board_id}/cards", file=sys.stderr, flush=True)
 
         # Create card using correct endpoint
-        response = await api_client.post(f"boards/{board_id}/cards", card_data)
-        card = response.get("item", {})
+        try:
+            response = await api_client.post(f"boards/{board_id}/cards", card_data)
+            card = response.get("item", {})
 
-        # Invalidate board cache (board now has new card)
-        cache.invalidate_board(board_id)
+            # Invalidate board cache (board now has new card)
+            cache.invalidate_board(board_id)
 
-        # Return minimal confirmation
-        return f"✓ Created card: **{card.get('name', 'Untitled')}** (ID: `{card.get('id', 'N/A')}`)"
+            # Return minimal confirmation
+            return f"✓ Created card: **{card.get('name', 'Untitled')}** (ID: `{card.get('id', 'N/A')}`)"
+        except httpx.HTTPStatusError as e:
+            print(f"[DEBUG] API Error Response Status: {e.response.status_code}", file=sys.stderr, flush=True)
+            print(f"[DEBUG] API Error Response Body: {e.response.text}", file=sys.stderr, flush=True)
+            print(f"[DEBUG] API Error Response URL: {e.response.url}", file=sys.stderr, flush=True)
+            raise
 
     except Exception as e:
         return handle_api_error(e)
