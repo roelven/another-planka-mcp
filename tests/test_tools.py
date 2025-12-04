@@ -952,6 +952,41 @@ class TestPlankaUpdateCard:
             # Verify move is indicated
             assert "moved" in result
 
+            # Verify position is automatically added when moving lists
+            call_args = mock_planka_api_client.patch.call_args
+            update_data = call_args[0][1]
+            assert update_data["listId"] == "list2"
+            assert update_data["position"] == 65535  # Default position at end
+
+    @pytest.mark.asyncio
+    async def test_update_card_move_list_with_position(
+        self, mock_planka_api_client, mock_cache
+    ):
+        """Test moving card to different list with explicit position."""
+        with patch('planka_mcp.api_client', mock_planka_api_client), \
+             patch('planka_mcp.cache', mock_cache):
+
+            updated_card = {
+                "item": {
+                    "id": "card1",
+                    "name": "Test Card",
+                    "listId": "list2",
+                    "boardId": "board1"
+                }
+            }
+            mock_planka_api_client.patch = AsyncMock(return_value=updated_card)
+            mock_cache.invalidate_card = Mock()
+            mock_cache.invalidate_board = Mock()
+
+            params = UpdateCardInput(card_id="card1", list_id="list2", position=1024.5)
+            result = await planka_update_card(params)
+
+            # Verify explicit position is used
+            call_args = mock_planka_api_client.patch.call_args
+            update_data = call_args[0][1]
+            assert update_data["listId"] == "list2"
+            assert update_data["position"] == 1024.5  # Explicit position preserved
+
     @pytest.mark.asyncio
     async def test_update_card_invalidates_cache(
         self, mock_planka_api_client, mock_cache
