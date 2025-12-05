@@ -8,7 +8,12 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:docs.planka.cloud)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv GETTING_STARTED.md INSTALL.md TESTING.md TOKEN_EFFICIENCY_ANALYSIS.md WORKFLOW_OPTIMIZATIONS.md IMPLEMENTATION_GUIDE.md IMPLEMENTATION_GUIDE_PART2.md docs/)",
+      "Bash(mv:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
