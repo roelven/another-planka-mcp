@@ -95,7 +95,7 @@ Native API key support with a user interface is under active development. Track 
 
 ### Setup
 
-**For detailed platform-specific installation instructions, see [INSTALL.md](INSTALL.md)**
+**For detailed platform-specific installation instructions, see [INSTALL.md](docs/INSTALL.md)**
 
 Quick setup:
 
@@ -143,7 +143,7 @@ Quick setup:
 
 ## Usage with Claude Desktop
 
-**See [INSTALL.md](INSTALL.md) for complete installation instructions.**
+**See [INSTALL.md](docs/INSTALL.md) for complete installation instructions.**
 
 Config file locations:
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -407,7 +407,7 @@ open htmlcov/index.html
 - Input validation tests for all Pydantic models
 - Tests for all 9 tools covering happy paths, errors, and edge cases
 
-See [TESTING.md](TESTING.md) for detailed testing documentation.
+See [TESTING.md](docs/TESTING.md) for detailed testing documentation.
 
 ### Test with MCP Inspector
 ```bash
