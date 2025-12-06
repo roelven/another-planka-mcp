@@ -15,7 +15,14 @@
       "Bash(mv:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nReorganize documentation structure\n\n- Move markdown documentation files to new `docs/` folder\n- Update README.md links to point to `docs/` folder\n- Keep only README.md, CONTRIBUTING.md, and LICENSE in repository root\n- All documentation links now correctly reference files in `docs/` folder\n- Cleaner repository structure with improved organization\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python3 -m pytest:*)",
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)",
+      "Bash(source:*)",
+      "Bash(. venv/bin/activate:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []
