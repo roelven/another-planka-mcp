@@ -1,23 +1,16 @@
 """Comprehensive tests for all Planka MCP tools."""
-
 import pytest
 from unittest.mock import AsyncMock, Mock, patch, MagicMock
 import json
 import httpx
-
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from planka_mcp import (
-    planka_get_workspace,
-    planka_list_cards,
-    planka_find_and_get_card,
-    planka_get_card,
-    planka_create_card,
-    planka_update_card,
-    planka_add_task,
-    planka_update_task,
+# Add the src directory to the path so we can import from planka_mcp
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')) + '/src')
+
+# Import from the new modular structure
+from planka_mcp.models import (
     GetWorkspaceInput,
     ListCardsInput,
     FindAndGetCardInput,
@@ -29,10 +22,14 @@ from planka_mcp import (
     ResponseFormat,
     DetailLevel,
     ResponseContext,
-    PlankaCache,
-    CacheEntry
+    AddCardLabelInput,
+    RemoveCardLabelInput
 )
-
+from planka_mcp.cache import PlankaCache, CacheEntry
+from planka_mcp.handlers.workspace import planka_get_workspace, fetch_workspace_data
+from planka_mcp.handlers.cards import planka_list_cards, planka_get_card, planka_create_card, planka_update_card
+from planka_mcp.handlers.search import planka_find_and_get_card
+from planka_mcp.handlers.tasks_labels import planka_add_task, planka_update_task, planka_add_card_label, planka_remove_card_label
 
 # ==================== planka_get_workspace TESTS ====================
 
@@ -44,8 +41,8 @@ class TestPlankaGetWorkspace:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test successful workspace retrieval in markdown format."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.workspace.cache', mock_cache):
 
             # Mock cache.get_workspace to return workspace data
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
@@ -75,8 +72,8 @@ class TestPlankaGetWorkspace:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test successful workspace retrieval in JSON format."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.workspace.cache', mock_cache):
 
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
 
@@ -99,8 +96,8 @@ class TestPlankaGetWorkspace:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test workspace retrieval uses cache."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.workspace.cache', mock_cache):
 
             # Setup cache to simulate cache hit
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
@@ -117,8 +114,8 @@ class TestPlankaGetWorkspace:
         self, mock_planka_api_client, mock_cache
     ):
         """Test workspace retrieval handles API errors."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.workspace.cache', mock_cache):
 
             # Mock cache to raise an HTTP error
             mock_response = Mock()
@@ -142,8 +139,8 @@ class TestPlankaGetWorkspace:
         self, mock_planka_api_client, mock_cache
     ):
         """Test workspace retrieval with empty workspace."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.workspace.cache', mock_cache):
 
             empty_workspace = {
                 "projects": [],
@@ -166,8 +163,8 @@ class TestPlankaGetWorkspace:
         self, mock_planka_api_client, mock_cache
     ):
         """Test workspace retrieval handles connection errors."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.workspace.cache', mock_cache):
 
             mock_cache.get_workspace = AsyncMock(
                 side_effect=httpx.ConnectError("Connection failed")
@@ -190,7 +187,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test successful card listing in preview mode."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             mock_planka_api_client.get = AsyncMock(return_value=sample_board_response)
 
@@ -217,7 +214,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test card listing in JSON format."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             mock_planka_api_client.get = AsyncMock(return_value=sample_board_response)
 
@@ -240,7 +237,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test card listing filtered by list."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             mock_planka_api_client.get = AsyncMock(return_value=sample_board_response)
 
@@ -259,7 +256,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test card listing filtered by label."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             mock_planka_api_client.get = AsyncMock(return_value=sample_board_response)
 
@@ -278,7 +275,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test card listing with pagination."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             mock_planka_api_client.get = AsyncMock(return_value=sample_board_response)
 
@@ -298,7 +295,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client
     ):
         """Test card listing with no matching cards."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             empty_board = {
                 "item": {"id": "board1", "name": "Empty Board"},
@@ -321,7 +318,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test different detail levels."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             mock_planka_api_client.get = AsyncMock(return_value=sample_board_response)
 
@@ -354,7 +351,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client
     ):
         """Test card listing when board doesn't exist."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             mock_response = Mock()
             mock_response.status_code = 404
@@ -384,8 +381,8 @@ class TestPlankaFindAndGetCard:
         sample_workspace_data, sample_card_data
     ):
         """Test finding a single card and getting details."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.search.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.search.cache', mock_cache):
 
             # Mock board response with one matching card
             board_response = {
@@ -429,8 +426,8 @@ class TestPlankaFindAndGetCard:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test finding multiple matching cards."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.search.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.search.cache', mock_cache):
 
             # Multiple matching cards
             board_response = {
@@ -459,8 +456,8 @@ class TestPlankaFindAndGetCard:
         self, mock_planka_api_client, mock_cache
     ):
         """Test finding no matching cards."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.search.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.search.cache', mock_cache):
 
             board_response = {
                 "included": {"cards": []}
@@ -479,8 +476,8 @@ class TestPlankaFindAndGetCard:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test searching across all boards when board_id not specified."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.search.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.search.cache', mock_cache):
 
             board_response = {
                 "included": {
@@ -504,8 +501,8 @@ class TestPlankaFindAndGetCard:
         self, mock_planka_api_client, mock_cache, sample_card_data
     ):
         """Test search matches card descriptions."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.search.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.search.cache', mock_cache):
 
             card_with_desc = sample_card_data.copy()
             card_with_desc["name"] = "Some Card"
@@ -551,8 +548,8 @@ class TestPlankaFindAndGetCard:
         sample_workspace_data, sample_card_data
     ):
         """Test find returns JSON when requested."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.search.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.search.cache', mock_cache):
 
             board_response = {
                 "included": {"cards": [sample_card_data]}
@@ -599,8 +596,8 @@ class TestPlankaGetCard:
         sample_workspace_data, sample_card_data
     ):
         """Test getting card details in markdown format."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             # Mock cache to return card
             async def fetch_card_func():
@@ -628,8 +625,8 @@ class TestPlankaGetCard:
         sample_workspace_data, sample_card_data
     ):
         """Test getting card details in JSON format."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             mock_cache.get_card = AsyncMock(return_value=sample_card_data)
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
@@ -652,8 +649,8 @@ class TestPlankaGetCard:
         sample_workspace_data, sample_card_data
     ):
         """Test get card uses cache."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             mock_cache.get_card = AsyncMock(return_value=sample_card_data)
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
@@ -669,8 +666,8 @@ class TestPlankaGetCard:
         self, mock_planka_api_client, mock_cache
     ):
         """Test getting non-existent card."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             mock_response = Mock()
             mock_response.status_code = 404
@@ -694,8 +691,8 @@ class TestPlankaGetCard:
         sample_workspace_data, sample_card_data
     ):
         """Test card with tasks and comments are properly formatted."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             mock_cache.get_card = AsyncMock(return_value=sample_card_data)
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
@@ -723,8 +720,8 @@ class TestPlankaCreateCard:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test creating card with minimal fields."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             # Mock workspace response to find board_id for list
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
@@ -764,8 +761,8 @@ class TestPlankaCreateCard:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test creating card with all fields."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             # Mock workspace response to find board_id for list
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
@@ -807,8 +804,8 @@ class TestPlankaCreateCard:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test creating card invalidates board cache."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             # Mock workspace response to find board_id for list
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
@@ -834,8 +831,8 @@ class TestPlankaCreateCard:
         self, mock_planka_api_client, mock_cache
     ):
         """Test creating card handles API errors."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             mock_response = Mock()
             mock_response.status_code = 403
@@ -864,8 +861,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache
     ):
         """Test updating card name."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             updated_card = {
                 "item": {
@@ -897,8 +894,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache
     ):
         """Test updating multiple card fields."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             updated_card = {
                 "item": {
@@ -931,8 +928,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache
     ):
         """Test moving card to different list."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             updated_card = {
                 "item": {
@@ -963,8 +960,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache
     ):
         """Test moving card to different list with explicit position."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             updated_card = {
                 "item": {
@@ -992,8 +989,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache
     ):
         """Test updating card invalidates caches."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             updated_card = {
                 "item": {
@@ -1018,8 +1015,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache
     ):
         """Test updating non-existent card."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             mock_response = Mock()
             mock_response.status_code = 404
@@ -1048,8 +1045,8 @@ class TestPlankaAddTask:
         self, mock_planka_api_client, mock_cache
     ):
         """Test adding task to existing task list."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             # Mock card with existing task list
             card_response = {
@@ -1087,8 +1084,8 @@ class TestPlankaAddTask:
         self, mock_planka_api_client, mock_cache
     ):
         """Test adding task creates new task list if none exists."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             # Mock card with no task lists
             card_response = {
@@ -1125,8 +1122,8 @@ class TestPlankaAddTask:
         self, mock_planka_api_client, mock_cache
     ):
         """Test adding task to custom-named task list."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             card_response = {
                 "included": {
@@ -1159,8 +1156,8 @@ class TestPlankaAddTask:
         self, mock_planka_api_client, mock_cache
     ):
         """Test adding task invalidates card cache."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             card_response = {
                 "included": {
@@ -1187,8 +1184,8 @@ class TestPlankaAddTask:
         self, mock_planka_api_client, mock_cache
     ):
         """Test adding task to non-existent card."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             mock_response = Mock()
             mock_response.status_code = 404
@@ -1217,8 +1214,8 @@ class TestPlankaUpdateTask:
         self, mock_planka_api_client, mock_cache
     ):
         """Test marking task as complete."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             updated_task = {
                 "item": {
@@ -1249,8 +1246,8 @@ class TestPlankaUpdateTask:
         self, mock_planka_api_client, mock_cache
     ):
         """Test marking task as incomplete."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             updated_task = {
                 "item": {
@@ -1273,8 +1270,8 @@ class TestPlankaUpdateTask:
         self, mock_planka_api_client, mock_cache
     ):
         """Test updating non-existent task."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             mock_response = Mock()
             mock_response.status_code = 404
@@ -1297,8 +1294,8 @@ class TestPlankaUpdateTask:
         self, mock_planka_api_client, mock_cache
     ):
         """Test update task handles API errors."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             mock_response = Mock()
             mock_response.status_code = 403
@@ -1349,8 +1346,8 @@ class TestCacheBehavior:
         self, mock_planka_api_client, mock_cache
     ):
         """Test write operations invalidate relevant caches."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             mock_cache.invalidate_card = Mock()
             mock_cache.invalidate_board = Mock()
@@ -1382,8 +1379,8 @@ class TestCacheBehavior:
         # Trigger cleanup
         cache.cleanup_card_cache()
 
-        # Should keep only 50 most recent
-        assert len(cache.card_details) == 50
+        # Should keep only 100 most recent
+        assert len(cache.card_details) == 100
 
 
 # ==================== EDGE CASES ====================
@@ -1396,8 +1393,8 @@ class TestEdgeCases:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test responses are truncated if too large."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.workspace.cache', mock_cache):
 
             # Create workspace with many items
             large_workspace = sample_workspace_data.copy()
@@ -1424,8 +1421,8 @@ class TestEdgeCases:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test card with empty labels and members."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.cards.cache', mock_cache):
 
             card_no_labels = {
                 "id": "card1",
@@ -1456,8 +1453,8 @@ class TestEdgeCases:
         self, mock_planka_api_client, mock_cache
     ):
         """Test timeout errors are handled gracefully."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.workspace.cache', mock_cache):
 
             mock_cache.get_workspace = AsyncMock(
                 side_effect=httpx.TimeoutException("Request timed out")
@@ -1474,7 +1471,7 @@ class TestEdgeCases:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test label filter is case-insensitive."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             mock_planka_api_client.get = AsyncMock(return_value=sample_board_response)
 
@@ -1489,7 +1486,7 @@ class TestEdgeCases:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test pagination with various offset/limit combinations."""
-        with patch('planka_mcp.api_client', mock_planka_api_client):
+        with patch('planka_mcp.handlers.cards.api_client', mock_planka_api_client):
 
             mock_planka_api_client.get = AsyncMock(return_value=sample_board_response)
 
@@ -1513,8 +1510,8 @@ class TestPlankaAddCardLabel:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test adding a label to a card."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             # Mock workspace to get label name
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
@@ -1522,8 +1519,6 @@ class TestPlankaAddCardLabel:
             response = {"item": {"id": "cardLabel123"}}
             mock_planka_api_client.post = AsyncMock(return_value=response)
             mock_cache.invalidate_card = Mock()
-
-            from planka_mcp import planka_add_card_label, AddCardLabelInput
 
             params = AddCardLabelInput(
                 card_id="card1",
@@ -1549,13 +1544,11 @@ class TestPlankaAddCardLabel:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test adding label with API error."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
             mock_planka_api_client.post = AsyncMock(side_effect=Exception("API Error"))
-
-            from planka_mcp import planka_add_card_label, AddCardLabelInput
 
             params = AddCardLabelInput(card_id="card1", label_id="label1")
             result = await planka_add_card_label(params)
@@ -1571,15 +1564,13 @@ class TestPlankaRemoveCardLabel:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test removing a label from a card."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             # Mock workspace to get label name
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
             mock_planka_api_client.delete = AsyncMock()
             mock_cache.invalidate_card = Mock()
-
-            from planka_mcp import planka_remove_card_label, RemoveCardLabelInput
 
             params = RemoveCardLabelInput(
                 card_id="card1",
@@ -1602,13 +1593,11 @@ class TestPlankaRemoveCardLabel:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test removing label with API error."""
-        with patch('planka_mcp.api_client', mock_planka_api_client), \
-             patch('planka_mcp.cache', mock_cache):
+        with patch('planka_mcp.handlers.tasks_labels.api_client', mock_planka_api_client), \
+             patch('planka_mcp.handlers.tasks_labels.cache', mock_cache):
 
             mock_cache.get_workspace = AsyncMock(return_value=sample_workspace_data)
             mock_planka_api_client.delete = AsyncMock(side_effect=Exception("API Error"))
-
-            from planka_mcp import planka_remove_card_label, RemoveCardLabelInput
 
             params = RemoveCardLabelInput(card_id="card1", label_id="label1")
             result = await planka_remove_card_label(params)
