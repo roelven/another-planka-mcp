@@ -1,12 +1,8 @@
 # Another Planka MCP
 A Model Context Protocol (MCP) server that enables AI Chat clients to read and update your Planka boards using the Planka REST API.
 
----
-
 ## Overview
 Another Planka MCP Server provides you with a lightweight bridge between MCP clients and your self‑hosted Planka instance. It exposes projects, boards, lists, cards, tasks, and labels through MCP tools, allowing assistants to retrieve workspace data and perform write operations such as creating or updating cards.
-
----
 
 ## Features
 - List projects, boards, lists, labels, and members.
@@ -21,17 +17,6 @@ Example use cases:
 - “Create a new card in `<Board> / TODO` with subtasks…”
 - “Find the ‘Login bug’ card and list all tasks.”
 
----
-
-## Requirements
-- MCP client (Claude Desktop or similar).
-- A running Planka instance (HTTP/HTTPS reachable).
-- User account with appropriate permissions.
-- Python 3.10+.
-
----
-
-<<<<<<< Updated upstream
 ### Prerequisites
 - Python 3.10+
 - Access to a Planka instance
@@ -118,8 +103,6 @@ PLANKA_PASSWORD=your-password
    }
    ```
 
----
-
 ## Tools & Capabilities
 
 | Tool                         | Type   | Purpose                                                |
@@ -130,8 +113,6 @@ PLANKA_PASSWORD=your-password
 | `planka_create_card`        | Write  | Create a new card                                      |
 | `planka_update_card`        | Write  | Update an existing card                                |
 
----
-
 ## Usage Examples
 Ask your assistant:
 
@@ -140,15 +121,11 @@ Ask your assistant:
 - “Create a card named ‘App release checklist’ with these subtasks…”
 - “Move the ‘Integrate payment API’ card to ‘Done’.”
 
----
-
 ## Security & Permissions
 - The MCP server accesses only what the authenticated Planka user can access.
 - API token recommended over email/password.
 - Use HTTPS when exposing Planka externally.
 - Consider using a dedicated Planka service user with restricted permissions.
-
----
 
 ## Troubleshooting & FAQ
 **401 Unauthorized**  
@@ -162,18 +139,6 @@ Verify:
 
 **No boards or cards returned**  
 Confirm the Planka user has workspace access.
-
----
-
-## Contributing
-Contributions welcome.
-
-1. Fork the repository
-2. Create a feature branch
-3. Install dev dependencies
-4. Submit a pull request
-
----
 
 ## Running Tests
 
@@ -193,13 +158,6 @@ pytest --cov=planka_mcp --cov-report=html
 open htmlcov/index.html
 ```
 
-**Test Coverage:**
-- 56+ comprehensive tests
-- Unit tests for all infrastructure components
-- Integration tests with mocked API calls
-- Input validation tests for all Pydantic models
-- Tests for all 9 tools covering happy paths, errors, and edge cases
-
 ### Test with MCP Inspector
 ```bash
 npx @modelcontextprotocol/inspector python planka_mcp.py
@@ -210,29 +168,9 @@ npx @modelcontextprotocol/inspector python planka_mcp.py
 python planka_mcp.py
 ```
 
-## Troubleshooting
-
-### "Cannot connect to Planka server"
-- Verify `PLANKA_BASE_URL` is correct in `.env`
-- Check network connectivity
-- Ensure Planka instance is running
-
-### "Invalid API credentials"
-- Check your token/API key in `.env`
-- Ensure token hasn't expired
-- Try re-authenticating with email/password
-
-### "Resource not found"
-- Verify the ID is correct (use `planka_get_workspace` to see all IDs)
-- Ensure the resource hasn't been deleted
-
-## License
-MIT License. See `LICENSE`.
-
----
-
 ## Acknowledgements
 - Planka project: https://github.com/plankanban/planka
 - Model Context Protocol: https://modelcontextprotocol.io/
 
-
+## License
+MIT License. See `LICENSE`.
