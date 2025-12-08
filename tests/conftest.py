@@ -3,6 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, Mock
 from datetime import datetime
+from src.planka_mcp.cache import PlankaCache
 
 
 @pytest.fixture
@@ -20,12 +21,10 @@ def mock_planka_api_client():
 @pytest.fixture
 def mock_cache():
     """Mock PlankaCache for testing."""
-    from unittest.mock import Mock
-
-    cache = Mock()
-    cache.workspace = None
-    cache.board_overviews = {}
-    cache.card_details = {}
+    cache = Mock(spec=PlankaCache)
+    cache.get_workspace = AsyncMock()
+    cache.get_board_overview = AsyncMock()
+    cache.get_card = AsyncMock()
     cache.stats = {
         "workspace_hits": 0,
         "workspace_misses": 0,
@@ -34,7 +33,6 @@ def mock_cache():
         "card_hits": 0,
         "card_misses": 0,
     }
-
     return cache
 
 
@@ -181,3 +179,5 @@ def sample_board_response():
             ]
         }
     }
+
+

@@ -3,7 +3,6 @@ import pytest
 from unittest.mock import Mock, patch
 import json
 import httpx
-import asyncio
 
 from src.planka_mcp.models import GetWorkspaceInput, ResponseFormat
 from src.planka_mcp.handlers.workspace import planka_get_workspace
@@ -19,9 +18,7 @@ class TestPlankaGetWorkspace:
         """Test successful workspace retrieval in markdown format."""
         with patch('src.planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
              patch('src.planka_mcp.handlers.workspace.cache', mock_cache):
-            future = asyncio.Future()
-            future.set_result(sample_workspace_data)
-            mock_cache.get_workspace.return_value = future
+            mock_cache.get_workspace.return_value = sample_workspace_data
             params = GetWorkspaceInput(response_format=ResponseFormat.MARKDOWN)
             result = await planka_get_workspace(params)
             assert isinstance(result, str)
@@ -36,9 +33,7 @@ class TestPlankaGetWorkspace:
         """Test successful workspace retrieval in JSON format."""
         with patch('src.planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
              patch('src.planka_mcp.handlers.workspace.cache', mock_cache):
-            future = asyncio.Future()
-            future.set_result(sample_workspace_data)
-            mock_cache.get_workspace.return_value = future
+            mock_cache.get_workspace.return_value = sample_workspace_data
             params = GetWorkspaceInput(response_format=ResponseFormat.JSON)
             result = await planka_get_workspace(params)
             parsed = json.loads(result)
