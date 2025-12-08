@@ -1,56 +1,10 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
+.venv/
+virtualenv/
 venv/
-ENV/
-env/
+*.pyc
+*.egg-info/
+__pycache__/
 
-# Environment variables
 .env
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# MCP
-.mcp/
-.claude/
-
-# Testing
-.pytest_cache/
-.coverage
-.coverage.*
-htmlcov/
-.tox/
-*.cover
-.hypothesis/
-.mypy_cache/
-.dmypy.json
-dmypy.json
+.claude/settings.local.json
+GEMINI.md

@@ -95,10 +95,11 @@ class PlankaCache:
 
     def cleanup_card_cache(self):
         """Remove old entries to limit memory usage."""
-        if len(self.card_details) > 300:  # Updated max card cache size
+        if len(self.card_details) > 100:
+            # Sort by timestamp (oldest first)
             sorted_entries = sorted(
                 self.card_details.items(),
                 key=lambda x: x[1].timestamp
             )
-            # Keep only the most recent entries
-            self.card_details = dict(sorted_entries[-100:])
+            # Keep only the 50 most recent
+            self.card_details = dict(sorted_entries[-50:])
