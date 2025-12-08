@@ -90,6 +90,9 @@ def sample_workspace_data():
                 "username": "testuser",
                 "email": "test@example.com"
             }
+        },
+        "card_labels": {
+            "card1": ["label1"]
         }
     }
 
@@ -179,5 +182,53 @@ def sample_board_response():
             ]
         }
     }
-
+@pytest.fixture
+def sample_board_response():
+    """Sample board API response for testing."""
+    return {
+        "item": {
+            "id": "board1",
+            "name": "Test Board",
+            "projectId": "proj1"
+        },
+        "included": {
+            "lists": [
+                {"id": "list1", "name": "To Do", "boardId": "board1", "position": 0},
+                {"id": "list2", "name": "In Progress", "boardId": "board1", "position": 1}
+            ],
+            "labels": [
+                {"id": "label1", "name": "Bug", "color": "red", "boardId": "board1"},
+                {"id": "label2", "name": "Feature", "color": "blue", "boardId": "board1"}
+            ],
+            "cards": [
+                {
+                    "id": "card1",
+                    "name": "Test Card 1",
+                    "listId": "list1",
+                    "boardId": "board1",
+                    "memberIds": ["user1"],
+                    "taskLists": [],
+                    "comments": [],
+                    "attachments": []
+                },
+                {
+                    "id": "card2",
+                    "name": "Test Card 2",
+                    "listId": "list2",
+                    "boardId": "board1",
+                    "memberIds": [],
+                    "taskLists": [],
+                    "comments": [],
+                    "attachments": []
+                }
+            ],
+            "cardLabels": [
+                {"id": "cardLabel1", "cardId": "card1", "labelId": "label1"},
+                {"id": "cardLabel2", "cardId": "card2", "labelId": "label2"}
+            ],
+            "users": [
+                {"id": "user1", "name": "Test User", "username": "testuser"}
+            ]
+        }
+    }
 

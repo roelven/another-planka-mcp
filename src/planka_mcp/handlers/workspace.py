@@ -25,6 +25,7 @@ async def fetch_workspace_data() -> Dict:
         boards_map = {}
         lists_map = {}
         labels_map = {}
+        card_labels_map = {}
 
         for project in projects:
             # Get project details (includes boards)
@@ -64,13 +65,23 @@ async def fetch_workspace_data() -> Dict:
                         "boardId": label.get("boardId"),
                         "board_name": board.get("name", "Unknown Board")
                     }
+                
+                # Store cardLabels
+                for card_label in included.get("cardLabels", []):
+                    card_id = card_label.get("cardId")
+                    label_id = card_label.get("labelId")
+                    if card_id and label_id:
+                        if card_id not in card_labels_map:
+                            card_labels_map[card_id] = []
+                        card_labels_map[card_id].append(label_id)
 
         return {
             "projects": projects,
             "boards": boards_map,
             "lists": lists_map,
             "labels": labels_map,
-            "users": users_map
+            "users": users_map,
+            "card_labels": card_labels_map,
         }
     except Exception as e:
         raise e
