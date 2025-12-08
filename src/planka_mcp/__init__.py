@@ -35,6 +35,7 @@ from .models import (
 )
 from .cache import CacheEntry, PlankaCache
 from .utils import handle_api_error, ResponseFormatter, PaginationHelper
+from .api_client import PlankaAPIClient
 
 __all__ = [
     'mcp', 'api_client', 'cache',
@@ -66,5 +67,6 @@ __all__ = [
     'PlankaCache',
     'handle_api_error',
     'ResponseFormatter',
-    'PaginationHelper'
+    'PaginationHelper',
+    'PlankaAPIClient'
 ]
