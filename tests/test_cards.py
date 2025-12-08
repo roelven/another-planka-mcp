@@ -80,6 +80,43 @@ class TestPlankaListCards:
             assert "Error" in result
             assert "not found" in result
 
+    @pytest.mark.asyncio
+    async def test_list_cards_pagination(self, mock_planka_api_client, sample_board_response):
+        """Test card listing with pagination."""
+        # Create a response with more cards than the default limit
+        cards = []
+        for i in range(60):
+            cards.append({"id": f"card{i}", "name": f"Test Card {i}", "listId": "list1"})
+        
+        paginated_response = sample_board_response.copy()
+        paginated_response["included"]["cards"] = cards
+
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client):
+            mock_planka_api_client.get.return_value = paginated_response
+            params = ListCardsInput(board_id="board1", limit=50)
+            result = await planka_list_cards(params)
+
+            assert "Pagination" in result
+            assert "Showing 50 of 60 cards" in result
+            assert "offset=50" in result
+
+    @pytest.mark.asyncio
+    async def test_list_cards_malformed_card_labels(
+        self, mock_planka_api_client, sample_board_response
+    ):
+        """Test card listing with malformed card labels."""
+        malformed_response = sample_board_response.copy()
+        malformed_response["included"]["cardLabels"] = [
+            {"id": "cardLabel1", "cardId": "card1"},  # missing labelId
+            {"id": "cardLabel2", "labelId": "label2"},  # missing cardId
+        ]
+
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client):
+            mock_planka_api_client.get.return_value = malformed_response
+            params = ListCardsInput(board_id="board1")
+            result = await planka_list_cards(params)
+            # The code should not crash, and just render no labels
+            assert "Labels: None" in result
 
 class TestPlankaGetCard:
     """Test planka_get_card tool."""
@@ -100,6 +137,49 @@ class TestPlankaGetCard:
             assert "Test Card" in result
             assert "card1" in result
 
+    @pytest.mark.asyncio
+    async def test_get_card_fallback_to_workspace_context(
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
+    ):
+        """Test that get_card falls back to workspace context if card details are missing."""
+        card_data_without_includes = {
+            "id": "card1",
+            "name": "Test Card",
+            "listId": "list1",
+            "boardId": "board1",
+        }
+
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+
+            mock_cache.get_card.return_value = card_data_without_includes
+            mock_cache.get_workspace.return_value = sample_workspace_data
+
+            params = GetCardInput(card_id="card1")
+            result = await planka_get_card(params)
+
+            # Check that the card name is in the result
+            assert "Test Card" in result
+            # Check that the label name from the workspace is in the result
+            assert "Bug" in result
+
+    @pytest.mark.asyncio
+    async def test_get_card_json_format(
+        self, mock_planka_api_client, mock_cache, sample_workspace_data, sample_card_data
+    ):
+        """Test get_card in JSON format."""
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+
+            mock_cache.get_card.return_value = sample_card_data
+            mock_cache.get_workspace.return_value = sample_workspace_data
+
+            params = GetCardInput(card_id="card1", response_format=ResponseFormat.JSON)
+            result = await planka_get_card(params)
+            parsed = json.loads(result)
+
+            assert parsed["id"] == "card1"
+            assert parsed["name"] == "Test Card"
 
 class TestPlankaCreateCard:
     """Test planka_create_card tool."""
@@ -123,6 +203,21 @@ class TestPlankaCreateCard:
             assert "New Test Card" in result
             mock_planka_api_client.post.assert_called_once()
 
+    @pytest.mark.asyncio
+    async def test_create_card_invalid_list_id(
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
+    ):
+        """Test card creation with an invalid list ID."""
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+            
+            mock_cache.get_workspace.return_value = sample_workspace_data
+
+            params = CreateCardInput(list_id="invalid_list", name="New Test Card")
+            result = await planka_create_card(params)
+
+            assert "Error: List ID 'invalid_list' not found" in result
+
 
 class TestPlankaUpdateCard:
     """Test planka_update_card tool."""
@@ -141,4 +236,86 @@ class TestPlankaUpdateCard:
             assert "Updated" in result
             assert "Updated Test Card" in result
             mock_planka_api_client.patch.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_update_card_description(
+        self, mock_planka_api_client, mock_cache, sample_card_data
+    ):
+        """Test updating card description."""
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+            updated_card = {"item": {"id": "card1", "description": "New Description"}}
+            mock_planka_api_client.patch.return_value = updated_card
+            params = UpdateCardInput(card_id="card1", description="New Description")
+            result = await planka_update_card(params)
+            assert "Updated description" in result
+
+    @pytest.mark.asyncio
+    async def test_update_card_due_date(
+        self, mock_planka_api_client, mock_cache, sample_card_data
+    ):
+        """Test updating card due date."""
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+            updated_card = {"item": {"id": "card1", "dueDate": "2025-01-01T00:00:00Z"}}
+            mock_planka_api_client.patch.return_value = updated_card
+            params = UpdateCardInput(card_id="card1", due_date="2025-01-01T00:00:00Z")
+            result = await planka_update_card(params)
+            assert "Updated due date" in result
+
+    @pytest.mark.asyncio
+    async def test_move_card_to_another_list(
+        self, mock_planka_api_client, mock_cache, sample_card_data
+    ):
+        """Test moving card to another list."""
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+            updated_card = {"item": {"id": "card1", "listId": "list2"}}
+            mock_planka_api_client.patch.return_value = updated_card
+            params = UpdateCardInput(card_id="card1", list_id="list2")
+            result = await planka_update_card(params)
+            assert "Updated list (moved)" in result
+
+    @pytest.mark.asyncio
+    async def test_move_card_to_another_list_without_position(
+        self, mock_planka_api_client, mock_cache, sample_card_data
+    ):
+        """Test moving card to another list without specifying position."""
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+            updated_card = {"item": {"id": "card1", "listId": "list2"}}
+            mock_planka_api_client.patch.return_value = updated_card
+            params = UpdateCardInput(card_id="card1", list_id="list2")
+            result = await planka_update_card(params)
+            assert "Updated list (moved)" in result
+            # Check that position was added to the patch call
+            mock_planka_api_client.patch.assert_called_once_with(
+                "cards/card1", {"listId": "list2", "position": 65535}
+            )
+
+    @pytest.mark.asyncio
+    async def test_update_card_no_fields(
+        self, mock_planka_api_client, mock_cache, sample_card_data
+    ):
+        """Test updating card with no fields."""
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+            updated_card = {"item": {"id": "card1"}}
+            mock_planka_api_client.patch.return_value = updated_card
+            params = UpdateCardInput(card_id="card1")
+            result = await planka_update_card(params)
+            assert "Updated card" in result
+
+    @pytest.mark.asyncio
+    async def test_update_card_no_fields(
+        self, mock_planka_api_client, mock_cache, sample_card_data
+    ):
+        """Test updating card with no fields."""
+        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+            updated_card = {"item": {"id": "card1"}}
+            mock_planka_api_client.patch.return_value = updated_card
+            params = UpdateCardInput(card_id="card1")
+            result = await planka_update_card(params)
+            assert "Updated card" in result
 

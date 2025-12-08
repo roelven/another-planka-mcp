@@ -159,13 +159,17 @@ async def planka_get_card(params: GetCardInput) -> str:
 
         # Build card labels mapping from cardLabels join table
         card_labels_map = {}
-        for card_label in card.get('_included_cardLabels', []):
-            card_id = card_label.get("cardId")
-            label_id = card_label.get("labelId")
-            if card_id and label_id:
-                if card_id not in card_labels_map:
-                    card_labels_map[card_id] = []
-                card_labels_map[card_id].append(label_id)
+        included_card_labels = card.get('_included_cardLabels', [])
+        if included_card_labels:
+            for card_label in included_card_labels:
+                card_id = card_label.get("cardId")
+                label_id = card_label.get("labelId")
+                if card_id and label_id:
+                    if card_id not in card_labels_map:
+                        card_labels_map[card_id] = []
+                    card_labels_map[card_id].append(label_id)
+        else:
+            card_labels_map = workspace.get('card_labels', {})
 
         context = {
             'lists': workspace.get('lists', {}),
