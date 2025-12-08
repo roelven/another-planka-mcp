@@ -22,7 +22,8 @@
       "Bash(pip3 install:*)",
       "Bash(source:*)",
       "Bash(. venv/bin/activate:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
