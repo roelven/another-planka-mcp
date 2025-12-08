@@ -5,8 +5,7 @@ from ..utils import ResponseFormatter, handle_api_error
 from ..api_client import PlankaAPIClient
 from ..cache import PlankaCache
 
-# Global instances imported from server
-from ..server import api_client, cache
+from ..instances import api_client, cache
 
 # ==================== HELPER FUNCTIONS ====================
 

@@ -22,11 +22,7 @@ from .api_client import PlankaAPIClient, initialize_auth
 from .handlers import planka_get_workspace, planka_list_cards, planka_find_and_get_card, planka_get_card, planka_create_card, planka_update_card, planka_add_task, planka_update_task, planka_add_card_label, planka_remove_card_label, fetch_workspace_data
 from .utils import handle_api_error, ResponseFormatter
 
-# Global instances (initialized on startup)
-api_client: Optional[PlankaAPIClient] = None
-cache: Optional[PlankaCache] = None
-
-# Initialize server
+from .instances import api_client, cache
 from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("planka_mcp")
 
