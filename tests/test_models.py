@@ -3,9 +3,6 @@
 import pytest
 from pydantic import ValidationError
 
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from planka_mcp import (
     GetWorkspaceInput,
