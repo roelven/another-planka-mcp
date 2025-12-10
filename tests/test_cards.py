@@ -4,7 +4,7 @@ from unittest.mock import patch, Mock
 import json
 import httpx
 
-from src.planka_mcp.models import (
+from planka_mcp.models import (
     ListCardsInput,
     GetCardInput,
     CreateCardInput,
@@ -12,7 +12,7 @@ from src.planka_mcp.models import (
     ResponseFormat,
     DetailLevel,
 )
-from src.planka_mcp.handlers.cards import (
+from planka_mcp.handlers.cards import (
     planka_list_cards,
     planka_get_card,
     planka_create_card,
@@ -28,7 +28,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test successful card listing in preview mode."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client):
             mock_planka_api_client.get.return_value = sample_board_response
             params = ListCardsInput(
                 board_id="board1",
@@ -45,7 +45,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test card listing in JSON format."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client):
             mock_planka_api_client.get.return_value = sample_board_response
             params = ListCardsInput(
                 board_id="board1", response_format=ResponseFormat.JSON
@@ -60,7 +60,7 @@ class TestPlankaListCards:
         self, mock_planka_api_client, sample_board_response
     ):
         """Test card listing filtered by list."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client):
             mock_planka_api_client.get.return_value = sample_board_response
             params = ListCardsInput(board_id="board1", list_id="list1")
             result = await planka_list_cards(params)
@@ -70,7 +70,7 @@ class TestPlankaListCards:
     @pytest.mark.asyncio
     async def test_list_cards_api_error(self, mock_planka_api_client):
         """Test card listing handles API errors."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client):
             mock_response = Mock()
             mock_response.status_code = 404
             error = httpx.HTTPStatusError("Not Found", request=Mock(), response=mock_response)
@@ -91,7 +91,7 @@ class TestPlankaListCards:
         paginated_response = sample_board_response.copy()
         paginated_response["included"]["cards"] = cards
 
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client):
             mock_planka_api_client.get.return_value = paginated_response
             params = ListCardsInput(board_id="board1", limit=50)
             result = await planka_list_cards(params)
@@ -111,7 +111,7 @@ class TestPlankaListCards:
             {"id": "cardLabel2", "labelId": "label2"},  # missing cardId
         ]
 
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client):
             mock_planka_api_client.get.return_value = malformed_response
             params = ListCardsInput(board_id="board1")
             result = await planka_list_cards(params)
@@ -125,8 +125,8 @@ class TestPlankaGetCard:
     async def test_get_card_success(
         self, mock_planka_api_client, mock_cache, sample_workspace_data, sample_card_data
     ):
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
 
             mock_cache.get_card.return_value = sample_card_data
             mock_cache.get_workspace.return_value = sample_workspace_data
@@ -149,8 +149,8 @@ class TestPlankaGetCard:
             "boardId": "board1",
         }
 
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
 
             mock_cache.get_card.return_value = card_data_without_includes
             mock_cache.get_workspace.return_value = sample_workspace_data
@@ -168,8 +168,8 @@ class TestPlankaGetCard:
         self, mock_planka_api_client, mock_cache, sample_workspace_data, sample_card_data
     ):
         """Test get_card in JSON format."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
 
             mock_cache.get_card.return_value = sample_card_data
             mock_cache.get_workspace.return_value = sample_workspace_data
@@ -189,8 +189,8 @@ class TestPlankaCreateCard:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test successful card creation."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
             
             mock_cache.get_workspace.return_value = sample_workspace_data
             created_card = {"item": {"id": "new_card", "name": "New Test Card"}}
@@ -208,8 +208,8 @@ class TestPlankaCreateCard:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test card creation with an invalid list ID."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
             
             mock_cache.get_workspace.return_value = sample_workspace_data
 
@@ -227,8 +227,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache, sample_card_data
     ):
         """Test successful card update."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
             updated_card = {"item": {"id": "card1", "name": "Updated Test Card"}}
             mock_planka_api_client.patch.return_value = updated_card
             params = UpdateCardInput(card_id="card1", name="Updated Test Card")
@@ -242,8 +242,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache, sample_card_data
     ):
         """Test updating card description."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
             updated_card = {"item": {"id": "card1", "description": "New Description"}}
             mock_planka_api_client.patch.return_value = updated_card
             params = UpdateCardInput(card_id="card1", description="New Description")
@@ -255,8 +255,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache, sample_card_data
     ):
         """Test updating card due date."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
             updated_card = {"item": {"id": "card1", "dueDate": "2025-01-01T00:00:00Z"}}
             mock_planka_api_client.patch.return_value = updated_card
             params = UpdateCardInput(card_id="card1", due_date="2025-01-01T00:00:00Z")
@@ -268,8 +268,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache, sample_card_data
     ):
         """Test moving card to another list."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
             updated_card = {"item": {"id": "card1", "listId": "list2"}}
             mock_planka_api_client.patch.return_value = updated_card
             params = UpdateCardInput(card_id="card1", list_id="list2")
@@ -281,8 +281,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache, sample_card_data
     ):
         """Test moving card to another list without specifying position."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
             updated_card = {"item": {"id": "card1", "listId": "list2"}}
             mock_planka_api_client.patch.return_value = updated_card
             params = UpdateCardInput(card_id="card1", list_id="list2")
@@ -298,8 +298,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache, sample_card_data
     ):
         """Test updating card with no fields."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
             updated_card = {"item": {"id": "card1"}}
             mock_planka_api_client.patch.return_value = updated_card
             params = UpdateCardInput(card_id="card1")
@@ -311,8 +311,8 @@ class TestPlankaUpdateCard:
         self, mock_planka_api_client, mock_cache, sample_card_data
     ):
         """Test updating card with no fields."""
-        with patch("src.planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.cards.cache", mock_cache):
+        with patch("planka_mcp.handlers.cards.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.cards.cache", mock_cache):
             updated_card = {"item": {"id": "card1"}}
             mock_planka_api_client.patch.return_value = updated_card
             params = UpdateCardInput(card_id="card1")

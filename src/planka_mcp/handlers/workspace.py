@@ -5,19 +5,22 @@ from ..utils import ResponseFormatter, handle_api_error
 from ..api_client import PlankaAPIClient
 from ..cache import PlankaCache
 
-from ..instances import api_client, cache
+from .. import instances # Import the instances module itself
 
 # ==================== HELPER FUNCTIONS ====================
 
 async def fetch_workspace_data() -> Dict:
     """Fetch complete workspace structure (projects, boards, lists, labels, users)."""
+    if instances.api_client is None:
+        raise RuntimeError("API client not initialized")
+    
     try:
         # Fetch all projects
-        projects_response = await api_client.get("projects")
+        projects_response = await instances.api_client.get("projects")
         projects = projects_response.get("items", [])
 
         # Fetch all users
-        users_response = await api_client.get("users")
+        users_response = await instances.api_client.get("users")
         users = users_response.get("items", [])
         users_map = {user["id"]: user for user in users}
 
@@ -29,12 +32,12 @@ async def fetch_workspace_data() -> Dict:
 
         for project in projects:
             # Get project details (includes boards)
-            project_detail = await api_client.get(f"projects/{project['id']}")
+            project_detail = await instances.api_client.get(f"projects/{project['id']}")
             project_boards = project_detail.get("included", {}).get("boards", [])
 
             for board_summary in project_boards:
                 # Get board details (includes lists, labels, cards)
-                board_detail = await api_client.get(f"boards/{board_summary['id']}")
+                board_detail = await instances.api_client.get(f"boards/{board_summary['id']}")
                 board = board_detail.get("item", {})
                 included = board_detail.get("included", {})
 
@@ -89,7 +92,7 @@ async def fetch_workspace_data() -> Dict:
 # ==================== TOOLS ====================
 
 async def planka_get_workspace(params: GetWorkspaceInput) -> str:
-    '''Get complete workspace structure in one call (projects, boards, lists, labels, users).
+    """Get complete workspace structure in one call (projects, boards, lists, labels, users)."
 
     This is the MOST IMPORTANT tool for token efficiency - it provides all workspace context
     in a single call, saving 50-66% tokens compared to making separate calls. Use this first
@@ -108,9 +111,12 @@ async def planka_get_workspace(params: GetWorkspaceInput) -> str:
         - "What projects and boards are available?" → Use this tool
         - "Show me the workspace structure" → Use this tool
         - Before creating a card, use this to find the right list_id
-    '''
+    """
+    if instances.cache is None:
+        raise RuntimeError("Cache not initialized")
+
     try:
-        data = await cache.get_workspace(fetch_workspace_data)
+        data = await instances.cache.get_workspace(fetch_workspace_data)
 
         if params.response_format == ResponseFormat.JSON:
             content = json.dumps(data, indent=2)

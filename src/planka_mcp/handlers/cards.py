@@ -1,17 +1,16 @@
-import json
 from typing import List, Dict, Any, Optional
 from ..models import ListCardsInput, GetCardInput, CreateCardInput, UpdateCardInput, ResponseFormat, DetailLevel
 from ..utils import ResponseFormatter, PaginationHelper, handle_api_error
 from ..api_client import PlankaAPIClient
 from ..cache import PlankaCache
 
-from ..instances import api_client, cache
+from .. import instances # Import the instances module itself
 from .workspace import fetch_workspace_data
 
 # ==================== TOOLS ====================
 
 async def planka_list_cards(params: ListCardsInput) -> str:
-    '''List cards from a Planka board with smart filtering and detail levels.
+    """List cards from a Planka board with smart filtering and detail levels."
 
     Supports cross-list queries (set list_id=None to get ALL cards from board) and label
     filtering. Use detail_level to control token usage: preview mode saves 60-88% tokens
@@ -28,10 +27,13 @@ async def planka_list_cards(params: ListCardsInput) -> str:
         - "What cards are in the TODO list?" → board_id="X", list_id="Y"
         - "Find all Critical bugs" → board_id="X", label_filter="Critical"
         - Use detail_level="preview" for quick browsing (saves 88% tokens vs detailed)
-    '''
+    """
+    if instances.api_client is None:
+        return handle_api_error(RuntimeError("API client not initialized"))
+
     try:
         # Fetch board details (includes lists, labels, cards)
-        board_detail = await api_client.get(f"boards/{params.board_id}")
+        board_detail = await instances.api_client.get(f"boards/{params.board_id}")
         board = board_detail.get("item", {})
         included = board_detail.get("included", {})
 
@@ -111,7 +113,7 @@ async def planka_list_cards(params: ListCardsInput) -> str:
         return handle_api_error(e)
 
 async def planka_get_card(params: GetCardInput) -> str:
-    '''Get complete details for a specific card.
+    """Get complete details for a specific card."
 
     Returns full card information including tasks, comments, attachments, members, and labels.
     Uses response_context parameter to control how much metadata is included.
@@ -125,11 +127,14 @@ async def planka_get_card(params: GetCardInput) -> str:
     Examples:
         - "Show me everything about card abc123" → Full card details
         - "Get card details for xyz789" → Complete information
-    '''
+    """
+    if instances.api_client is None or instances.cache is None:
+        return handle_api_error(RuntimeError("API client or Cache not initialized"))
+
     try:
         # Fetch card with caching
         async def fetch_card():
-            card_detail = await api_client.get(f"cards/{params.card_id}")
+            card_detail = await instances.api_client.get(f"cards/{params.card_id}")
             full_card = card_detail.get("item", {})
             included = card_detail.get("included", {})
 
@@ -143,10 +148,10 @@ async def planka_get_card(params: GetCardInput) -> str:
 
             return full_card
 
-        card = await cache.get_card(params.card_id, fetch_card)
+        card = await instances.cache.get_card(params.card_id, fetch_card)
 
         # Build context from workspace
-        workspace = await cache.get_workspace(fetch_workspace_data)
+        workspace = await instances.cache.get_workspace(fetch_workspace_data)
 
         # Use included data if available, otherwise use workspace data
         labels_map = {lbl["id"]: lbl for lbl in card.get('_included_labels', [])}
@@ -190,7 +195,7 @@ async def planka_get_card(params: GetCardInput) -> str:
         return handle_api_error(e)
 
 async def planka_create_card(params: CreateCardInput) -> str:
-    '''Create a new card in a Planka list.
+    """Create a new card in a Planka list."
 
     Creates a card with the specified name, description, and optional due date. Returns
     minimal confirmation to save tokens.
@@ -204,10 +209,13 @@ async def planka_create_card(params: CreateCardInput) -> str:
     Examples:
         - "Create a card called 'Fix login bug' in the TODO list" → Creates card
         - "Add new task 'Update docs' with description..." → Creates card with details
-    '''
+    """
+    if instances.api_client is None or instances.cache is None:
+        return handle_api_error(RuntimeError("API client or Cache not initialized"))
+
     try:
         # Verify list exists in workspace
-        workspace = await cache.get_workspace(fetch_workspace_data)
+        workspace = await instances.cache.get_workspace(fetch_workspace_data)
         list_info = workspace.get('lists', {}).get(params.list_id)
 
         if not list_info:
@@ -229,11 +237,11 @@ async def planka_create_card(params: CreateCardInput) -> str:
             card_data["dueDate"] = params.due_date
 
         # Create card using correct endpoint: POST /api/lists/:listId/cards
-        response = await api_client.post(f"lists/{params.list_id}/cards", card_data)
+        response = await instances.api_client.post(f"lists/{params.list_id}/cards", card_data)
         card = response.get("item", {})
 
         # Invalidate board cache (board now has new card)
-        cache.invalidate_board(board_id)
+        instances.cache.invalidate_board(board_id)
 
         # Return minimal confirmation
         return f"✓ Created card: **{card.get('name', 'Untitled')}** (ID: `{card.get('id', 'N/A')}`)"
@@ -242,7 +250,7 @@ async def planka_create_card(params: CreateCardInput) -> str:
         return handle_api_error(e)
 
 async def planka_update_card(params: UpdateCardInput) -> str:
-    '''Update an existing card's details.
+    """Update an existing card's details."
 
     Modify card name, description, due date, position, or move to different list.
     Invalidates relevant caches automatically.
@@ -256,7 +264,10 @@ async def planka_update_card(params: UpdateCardInput) -> str:
     Examples:
         - "Update card abc123 description to..." → Updates description
         - "Move card xyz789 to the Done list" → Moves card to different list
-    '''
+    """
+    if instances.api_client is None or instances.cache is None:
+        return handle_api_error(RuntimeError("API client or Cache not initialized"))
+
     try:
         # Build update payload (only include fields that are provided)
         update_data = {}
@@ -277,13 +288,13 @@ async def planka_update_card(params: UpdateCardInput) -> str:
             update_data["position"] = params.position
 
         # Update card
-        response = await api_client.patch(f"cards/{params.card_id}", update_data)
+        response = await instances.api_client.patch(f"cards/{params.card_id}", update_data)
         card = response.get("item", {})
 
         # Invalidate caches
-        cache.invalidate_card(params.card_id)
+        instances.cache.invalidate_card(params.card_id)
         if card.get('boardId'):
-            cache.invalidate_board(card['boardId'])
+            instances.cache.invalidate_board(card['boardId'])
 
         # Build confirmation message
         updates = []
