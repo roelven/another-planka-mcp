@@ -4,7 +4,8 @@ Planka MCP Server - Modular Package
 This package provides tools to interact with Planka kanban boards.
 """
 
-from .server import mcp, api_client, cache
+from .server import mcp
+from .instances import api_client, cache
 from .handlers import (
     planka_get_workspace,
     planka_list_cards,
@@ -16,7 +17,8 @@ from .handlers import (
     planka_update_task,
     planka_add_card_label,
     planka_remove_card_label,
-    fetch_workspace_data
+    fetch_workspace_data,
+    planka_get_workspace
 )
 from .models import (
     ResponseFormat,

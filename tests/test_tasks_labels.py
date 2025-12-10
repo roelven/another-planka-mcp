@@ -2,13 +2,13 @@
 import pytest
 from unittest.mock import patch
 
-from src.planka_mcp.models import (
+from planka_mcp.models import (
     AddTaskInput,
     UpdateTaskInput,
     AddCardLabelInput,
     RemoveCardLabelInput,
 )
-from src.planka_mcp.handlers.tasks_labels import (
+from planka_mcp.handlers.tasks_labels import (
     planka_add_task,
     planka_update_task,
     planka_add_card_label,
@@ -27,8 +27,8 @@ class TestPlankaAddTask:
         sample_card_data
     ):
         """Test successful task creation."""
-        with patch("src.planka_mcp.handlers.tasks_labels.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.tasks_labels.cache", mock_cache):
+        with patch("planka_mcp.handlers.tasks_labels.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.tasks_labels.cache", mock_cache):
             card_response = {"included": {"taskLists": [{"id": "tasklist1", "name": "Tasks"}]}}
             created_task = {"item": {"id": "new_task", "name": "New Test Task"}}
             mock_planka_api_client.get.return_value = card_response
@@ -52,8 +52,8 @@ class TestPlankaUpdateTask:
         mock_cache
     ):
         """Test successful task update."""
-        with patch("src.planka_mcp.handlers.tasks_labels.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.tasks_labels.cache", mock_cache):
+        with patch("planka_mcp.handlers.tasks_labels.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.tasks_labels.cache", mock_cache):
             updated_task = {"item": {"id": "task1", "name": "Test Task", "isCompleted": True}}
             mock_planka_api_client.patch.return_value = updated_task
             params = UpdateTaskInput(task_id="task1", is_completed=True)
@@ -73,8 +73,8 @@ class TestPlankaAddCardLabel:
         sample_workspace_data
     ):
         """Test successful card label addition."""
-        with patch("src.planka_mcp.handlers.tasks_labels.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.tasks_labels.cache", mock_cache):
+        with patch("planka_mcp.handlers.tasks_labels.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.tasks_labels.cache", mock_cache):
             mock_cache.get_workspace.return_value = sample_workspace_data
             mock_planka_api_client.post.return_value = {"item": {"id": "cardLabel1"}}
             params = AddCardLabelInput(card_id="card1", label_id="label1")
@@ -94,8 +94,8 @@ class TestPlankaRemoveCardLabel:
         sample_workspace_data
     ):
         """Test successful card label removal."""
-        with patch("src.planka_mcp.handlers.tasks_labels.api_client", mock_planka_api_client), \
-             patch("src.planka_mcp.handlers.tasks_labels.cache", mock_cache):
+        with patch("planka_mcp.handlers.tasks_labels.api_client", mock_planka_api_client), \
+             patch("planka_mcp.handlers.tasks_labels.cache", mock_cache):
             mock_cache.get_workspace.return_value = sample_workspace_data
             mock_planka_api_client.delete.return_value = None
             params = RemoveCardLabelInput(card_id="card1", label_id="label1")

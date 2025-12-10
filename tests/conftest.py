@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, Mock
 from datetime import datetime
-from src.planka_mcp.cache import PlankaCache
+from planka_mcp.cache import PlankaCache
 
 
 @pytest.fixture

@@ -5,7 +5,7 @@ from ..utils import ResponseFormatter, handle_api_error
 from ..api_client import PlankaAPIClient
 from ..cache import PlankaCache
 
-from ..instances import api_client, cache
+from .. import instances # Import the instances module itself
 
 # Import fetch_workspace_data from workspace module
 from .workspace import fetch_workspace_data
@@ -13,7 +13,7 @@ from .workspace import fetch_workspace_data
 # ==================== TOOLS ====================
 
 async def planka_find_and_get_card(params: FindAndGetCardInput) -> str:
-    '''Search for a card by name/description and get full details in one operation.
+    """Search for a card by name/description and get full details in one operation."
 
     This composite tool saves 37% tokens by combining search + retrieval. If multiple
     cards match, returns a list to choose from. If unique match, returns full card details.
@@ -27,14 +27,17 @@ async def planka_find_and_get_card(params: FindAndGetCardInput) -> str:
     Examples:
         - "Find the login bug card and show details" → Single efficient call
         - "Get details about the authentication card" → Searches + retrieves
-    '''
+    """
+    if instances.api_client is None or instances.cache is None:
+        return handle_api_error(RuntimeError("API client or Cache not initialized"))
+
     try:
         query_lower = params.query.lower()
         matching_cards = []
 
         # If board_id specified, search only that board
         if params.board_id:
-            board_detail = await api_client.get(f"boards/{params.board_id}")
+            board_detail = await instances.api_client.get(f"boards/{params.board_id}")
             cards = board_detail.get("included", {}).get("cards", [])
 
             # Search in card name and description
@@ -45,11 +48,11 @@ async def planka_find_and_get_card(params: FindAndGetCardInput) -> str:
             ]
         else:
             # Search across all boards - fetch workspace
-            workspace = await cache.get_workspace(fetch_workspace_data)
+            workspace = await instances.cache.get_workspace(fetch_workspace_data)
 
             # Search each board
             for board_id in workspace.get("boards", {}).keys():
-                board_detail = await api_client.get(f"boards/{board_id}")
+                board_detail = await instances.api_client.get(f"boards/{board_id}")
                 cards = board_detail.get("included", {}).get("cards", [])
 
                 matching_cards.extend([
@@ -66,12 +69,12 @@ async def planka_find_and_get_card(params: FindAndGetCardInput) -> str:
         if len(matching_cards) == 1:
             card = matching_cards[0]
             # Fetch full card details
-            card_detail = await api_client.get(f"cards/{card['id']}")
+            card_detail = await instances.api_client.get(f"cards/{card['id']}")
             full_card = card_detail.get("item", {})
             included = card_detail.get("included", {})
 
             # Build context
-            workspace = await cache.get_workspace(fetch_workspace_data)
+            workspace = await instances.cache.get_workspace(fetch_workspace_data)
 
             # Build card labels mapping from cardLabels join table
             card_labels_map = {}
@@ -102,7 +105,7 @@ async def planka_find_and_get_card(params: FindAndGetCardInput) -> str:
                 return json.dumps(full_card, indent=2)
 
         # Multiple matches - return list to choose from
-        workspace = await cache.get_workspace(fetch_workspace_data)
+        workspace = await instances.cache.get_workspace(fetch_workspace_data)
         output = f"# Found {len(matching_cards)} matching cards\n\n"
         for card in matching_cards[:10]:  # Limit to first 10
             list_name = workspace.get('lists', {}).get(card.get('listId'), {}).get('name', 'Unknown List')
