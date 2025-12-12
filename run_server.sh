@@ -7,7 +7,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Activate virtual environment if it exists, otherwise use system Python
 if [ -d "$SCRIPT_DIR/venv" ]; then
     source "$SCRIPT_DIR/venv/bin/activate"
-    exec python "$SCRIPT_DIR/main.py"
+    #!/bin/bash
+exec "${VIRTUAL_ENV}/bin/uvicorn" src.planka_mcp.server:app --host 0.0.0.0 --port "${PORT:-8000}"
 else
     exec python3 "$SCRIPT_DIR/main.py"
 fi
