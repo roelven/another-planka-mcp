@@ -38,9 +38,7 @@ async def get_workspace_endpoint(params: GetWorkspaceInput = Body(...)):
     return await planka_get_workspace(params)
 
 # Expose the FastMCP app as an ASGI application
-print("Creating FastMCP ASGI app...", file=sys.stderr, flush=True)
 mcp_asgi_app = mcp.streamable_http_app()
-print("FastMCP ASGI app created.", file=sys.stderr, flush=True)
 
 # Create a FastAPI application
 app = FastAPI(
@@ -50,6 +48,7 @@ app = FastAPI(
 )
 
 # Mount the FastMCP ASGI application onto the FastAPI app
+app.mount("/", mcp_asgi_app)
 
 app.include_router(router)
 
@@ -67,7 +66,6 @@ async def startup_event():
 
         print(f"Planka MCP Server initialized successfully", file=sys.stderr, flush=True)
         print(f"Connected to: {base_url}", file=sys.stderr, flush=True)
-        print("Startup event complete.", file=sys.stderr, flush=True)
     except Exception as e:
         print(f"Failed to initialize server: {e}", file=sys.stderr, flush=True)
         raise
