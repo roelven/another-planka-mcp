@@ -39,6 +39,10 @@ async def planka_find_and_get_card(params: FindAndGetCardInput) -> str:
         if params.board_id:
             board_detail = await instances.api_client.get(f"boards/{params.board_id}")
             cards = board_detail.get("included", {}).get("cards", [])
+            
+            # Ensure cards is always a list, never None
+            if cards is None:
+                cards = []
 
             # Search in card name and description
             matching_cards = [

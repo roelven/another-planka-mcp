@@ -62,8 +62,12 @@ async def planka_list_cards(params: ListCardsInput) -> str:
             'board_name': board.get("name", "Unknown Board")
         }
 
-        # Get all cards from included
+        # Get all cards from included with defensive programming
         cards = included.get("cards", [])
+        
+        # Ensure cards is always a list, never None
+        if cards is None:
+            cards = []
 
         # Filter by list if specified
         if params.list_id:
