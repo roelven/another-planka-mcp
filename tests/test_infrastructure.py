@@ -252,6 +252,33 @@ class TestPlankaCache:
         result2 = await cache.get_card("card1", fetch_func)
         assert result2["call"] == 2
 
+class TestPaginationHelper:
+    """Test PaginationHelper functionality."""
+    
+    def test_pagination_helper_with_none_items(self):
+        """Test that PaginationHelper handles None items gracefully."""
+        from planka_mcp.utils import PaginationHelper
+        
+        # Test with None items - should handle gracefully
+        with pytest.raises(TypeError, match="object of type 'NoneType' has no len()"):
+            PaginationHelper.paginate_results(None, 0, 10)
+
+    def test_pagination_helper_with_empty_list(self):
+        """Test that PaginationHelper handles empty list correctly."""
+        from planka_mcp.utils import PaginationHelper
+        
+        # Test with empty list - should work fine
+        result = PaginationHelper.paginate_results([], 0, 10)
+        assert result == {
+            "items": [],
+            "offset": 0,
+            "limit": 10,
+            "count": 0,
+            "total": 0,
+            "has_more": False,
+            "next_offset": None
+        }
+
         # Set up cache entries
         cache.workspace = CacheEntry({"test": "data"}, time.time(), 300)
         cache.board_overviews["board1"] = CacheEntry({"board": "data"}, time.time(), 180)
@@ -421,6 +448,34 @@ class TestPaginationHelper:
         assert len(result["items"]) == 0
         assert result["total"] == 0
         assert result["has_more"] is False
+
+    def test_paginate_results_with_none_items(self):
+        """Test that PaginationHelper handles None items gracefully."""
+        # Test with None items - should handle gracefully by treating as empty list
+        result = PaginationHelper.paginate_results(None, 0, 10)
+        assert result == {
+            "items": [],
+            "offset": 0,
+            "limit": 10,
+            "count": 0,
+            "total": 0,
+            "has_more": False,
+            "next_offset": None
+        }
+
+    def test_paginate_results_with_empty_list(self):
+        """Test that PaginationHelper handles empty list correctly."""
+        # Test with empty list - should work fine
+        result = PaginationHelper.paginate_results([], 0, 10)
+        assert result == {
+            "items": [],
+            "offset": 0,
+            "limit": 10,
+            "count": 0,
+            "total": 0,
+            "has_more": False,
+            "next_offset": None
+        }
 
 
 class TestErrorHandling:

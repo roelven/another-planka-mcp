@@ -217,6 +217,10 @@ class PaginationHelper:
         total: Optional[int] = None
     ) -> Dict:
         """Return paginated results with metadata."""
+        # Defensive programming: handle None items gracefully
+        if items is None:
+            items = []
+        
         total = total or len(items)
         paginated_items = items[offset:offset + limit]
 
