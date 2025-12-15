@@ -453,6 +453,32 @@ class TestPlankaUpdateCard:
             assert "Updated card" in result
 
     @pytest.mark.asyncio
+    async def test_update_card_not_initialized(self):
+        """Test update_card when API client or cache is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            params = UpdateCardInput(
+                card_id="card1",
+                name="Updated Card",
+                description="Updated Description"
+            )
+            result = await planka_update_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+        
+        # Test when cache is None
+        with patch("planka_mcp.instances.api_client", Mock()), \
+             patch("planka_mcp.instances.cache", None):
+            params = UpdateCardInput(
+                card_id="card1",
+                name="Updated Card",
+                description="Updated Description"
+            )
+            result = await planka_update_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+
+    @pytest.mark.asyncio
     async def test_update_card_no_fields(
         self, mock_planka_api_client, mock_cache, sample_card_data
     ):
