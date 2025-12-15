@@ -91,6 +91,41 @@ class TestPlankaListCards:
             assert "API client not initialized" in result
 
     @pytest.mark.asyncio
+    async def test_list_cards_label_filter(self, mock_planka_api_client, sample_board_response):
+        """Test card listing with label filtering."""
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client):
+            mock_planka_api_client.get.return_value = sample_board_response
+            
+            # Test filtering by "Bug" label
+            params = ListCardsInput(
+                board_id="board1",
+                label_filter="Bug",
+                response_format=ResponseFormat.MARKDOWN,
+            )
+            result = await planka_list_cards(params)
+            
+            # Should only show card1 which has the "Bug" label
+            assert "Test Card 1" in result
+            assert "Test Card 2" not in result
+            assert "Bug" in result
+            
+            # Test filtering by "Feature" label
+            params.label_filter = "Feature"
+            result = await planka_list_cards(params)
+            
+            # Should only show card2 which has the "Feature" label
+            assert "Test Card 2" in result
+            assert "Test Card 1" not in result
+            assert "Feature" in result
+            
+            # Test filtering by non-existent label
+            params.label_filter = "Nonexistent"
+            result = await planka_list_cards(params)
+            
+            # Should show no cards message
+            assert "No cards found" in result
+
+    @pytest.mark.asyncio
     async def test_list_cards_pagination(self, mock_planka_api_client, sample_board_response):
         """Test card listing with pagination."""
         # Create a response with more cards than the default limit
