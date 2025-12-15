@@ -79,6 +79,16 @@ class TestPlankaUpdateTask:
             assert "Marked task as complete" in result
             mock_planka_api_client.patch.assert_called_once()
 
+    @pytest.mark.asyncio
+    async def test_update_task_not_initialized(self):
+        """Test update_task when API client is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            params = UpdateTaskInput(task_id="task1", is_completed=True)
+            result = await planka_update_task(params)
+            assert "Error" in result
+            assert "API client not initialized" in result
+
 
 class TestPlankaAddCardLabel:
     """Test planka_add_card_label tool."""
@@ -100,6 +110,24 @@ class TestPlankaAddCardLabel:
             assert "Added label" in result
             mock_planka_api_client.post.assert_called_once()
 
+    @pytest.mark.asyncio
+    async def test_add_card_label_not_initialized(self):
+        """Test add_card_label when API client or cache is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            params = AddCardLabelInput(card_id="card1", label_id="label1")
+            result = await planka_add_card_label(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+        
+        # Test when cache is None
+        with patch("planka_mcp.instances.api_client", Mock()), \
+             patch("planka_mcp.instances.cache", None):
+            params = AddCardLabelInput(card_id="card1", label_id="label1")
+            result = await planka_add_card_label(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+
 
 class TestPlankaRemoveCardLabel:
     """Test planka_remove_card_label tool."""
@@ -120,3 +148,21 @@ class TestPlankaRemoveCardLabel:
             result = await planka_remove_card_label(params)
             assert "Removed label" in result
             mock_planka_api_client.delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_remove_card_label_not_initialized(self):
+        """Test remove_card_label when API client or cache is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            params = RemoveCardLabelInput(card_id="card1", label_id="label1")
+            result = await planka_remove_card_label(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+        
+        # Test when cache is None
+        with patch("planka_mcp.instances.api_client", Mock()), \
+             patch("planka_mcp.instances.cache", None):
+            params = RemoveCardLabelInput(card_id="card1", label_id="label1")
+            result = await planka_remove_card_label(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result

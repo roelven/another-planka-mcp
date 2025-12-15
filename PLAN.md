@@ -4,8 +4,8 @@
 This plan outlines a comprehensive approach to improve the planka-mcp repository by fixing critical issues, improving test coverage to 90%, and enhancing code quality. The plan is structured in small, manageable increments with clear milestones.
 
 ## Current State
-- **Test Coverage**: 80.85% (target: 79% ✅, goal: 90%)
-- **Failing Tests**: 0 out of 114 tests ✅
+- **Test Coverage**: 83.36% (target: 79% ✅, goal: 90%)
+- **Failing Tests**: 0 out of 126 tests ✅
 - **Pylint Rating**: 7.75/10
 - **Critical Issues**: ✅ RESOLVED - Missing imports fixed, test mocking corrected
 
@@ -55,13 +55,16 @@ This plan outlines a comprehensive approach to improve the planka-mcp repository
 - [ ] Add edge case tests (no matches, multiple matches)
 - [ ] Target: Increase search.py coverage from 83% to 90%+
 
-### Milestone 2.3: Handler Test Coverage - Tasks & Labels ✅ STARTED
+### Milestone 2.3: Handler Test Coverage - Tasks & Labels ✅ COMPLETED
 - [x] Add test for add_task API client/cache not initialized (line 25)
-- [ ] Add comprehensive tests for `planka_add_task` function
-- [ ] Add tests for `planka_update_task` function
-- [ ] Add tests for `planka_add_card_label` function
-- [ ] Add tests for `planka_remove_card_label` function
-- [ ] Target: Increase tasks_labels.py coverage from 77% to 85%+
+- [x] Add test for update_task API client not initialized (line 97)
+- [x] Add test for add_card_label API client/cache not initialized (line 135)
+- [x] Add test for remove_card_label API client/cache not initialized (line 173)
+- [x] Add comprehensive tests for `planka_add_task` function
+- [x] Add tests for `planka_update_task` function
+- [x] Add tests for `planka_add_card_label` function
+- [x] Add tests for `planka_remove_card_label` function
+- [x] Target: Increase tasks_labels.py coverage from 77% to 85%+ ✅ ACHIEVED (84%)
 
 ### Milestone 2.4: Handler Test Coverage - Workspace
 - [ ] Add comprehensive tests for `planka_get_workspace` function
