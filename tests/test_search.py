@@ -82,3 +82,36 @@ class TestPlankaFindAndGetCard:
             result = await planka_find_and_get_card(params)
             assert "Error" in result
             assert "API client or Cache not initialized" in result
+
+    @pytest.mark.asyncio
+    async def test_find_across_all_boards(
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
+    ):
+        """Test finding cards across all boards when no board_id specified."""
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
+            
+            # Mock workspace with board1 (from sample data)
+            mock_cache.get_workspace.return_value = sample_workspace_data
+            
+            # Mock board response with multiple matching cards
+            board_response = {
+                "included": {
+                    "cards": [
+                        {"id": "card1", "name": "Test Card 1", "description": "Description with test", "boardId": "board1", "listId": "list1"},
+                        {"id": "card2", "name": "Another Test Card", "description": "Different test content", "boardId": "board1", "listId": "list1"}
+                    ]
+                }
+            }
+            
+            mock_planka_api_client.get.return_value = board_response
+            
+            # Test search without board_id (should search all boards)
+            params = FindAndGetCardInput(query="test")
+            result = await planka_find_and_get_card(params)
+            
+            # Should find multiple cards (multiple matches format)
+            assert "Found 2 matching cards" in result
+            assert "Test Card 1" in result
+            assert "Another Test Card" in result
+            assert "Use planka_get_card with a specific card ID" in result
