@@ -56,6 +56,16 @@ class TestPlankaGetWorkspace:
             assert "Error" in result
             assert "Invalid API credentials" in result
 
+    @pytest.mark.asyncio
+    async def test_get_workspace_cache_not_initialized(self):
+        """Test get_workspace when cache is not initialized."""
+        # Test when cache is None
+        with patch("planka_mcp.instances.cache", None):
+            params = GetWorkspaceInput()
+            with pytest.raises(RuntimeError) as exc_info:
+                await planka_get_workspace(params)
+            assert "Cache not initialized" in str(exc_info.value)
+
 class TestFetchWorkspaceData:
     """Test the fetch_workspace_data helper function."""
 
@@ -109,3 +119,12 @@ class TestFetchWorkspaceData:
 
             with pytest.raises(httpx.HTTPStatusError):
                 await fetch_workspace_data()
+
+    @pytest.mark.asyncio
+    async def test_fetch_workspace_data_not_initialized(self):
+        """Test fetch_workspace_data when API client is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            with pytest.raises(RuntimeError) as exc_info:
+                await fetch_workspace_data()
+            assert "API client not initialized" in str(exc_info.value)
