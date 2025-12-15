@@ -87,13 +87,21 @@ PLANKA_PASSWORD=your-password
    ```
    python planka_mcp.py
    ```
+
+   **Note**: For direct MCP protocol communication (recommended for Claude Desktop), you can also run:
+   ```
+   python mcp_server.py
+   ```
+   
+   This provides better compatibility with MCP clients and includes proper protocol handling.
+
 6. Add to Claude Desktop config:
    ```json
    {
      "mcpServers": {
        "planka": {
          "command": "/absolute/path/to/venv/bin/python",
-         "args": ["planka_mcp.py"],
+         "args": ["mcp_server.py"],
          "env": {
            "PLANKA_BASE_URL": "https://your.domain",
            "PLANKA_API_TOKEN": "<token>"
@@ -102,6 +110,8 @@ PLANKA_PASSWORD=your-password
      }
    }
    ```
+
+   **Note**: Updated to use `mcp_server.py` for better MCP protocol compatibility.
 
 ## Tools & Capabilities
 
@@ -140,22 +150,31 @@ Verify:
 **No boards or cards returned**  
 Confirm the Planka user has workspace access.
 
+## Development Notes
+
+**Editable Installation**: This project uses an editable installation (via `pip install -e .` or the equivalent in the virtual environment), which means the `src` directory is automatically added to your Python path. This eliminates the need to manually set `PYTHONPATH` when running tests or the server.
+
+**Setting up editable mode**: If you need to reinstall the package in editable mode, you can run:
+```bash
+pip install -e .
+```
+
+This creates a `.pth` file in your virtual environment that points to the `src` directory, making all imports work seamlessly.
+
 ## Running Tests
 
 The project includes a comprehensive test suite with >90% code coverage.
 
-**Important**: Since this project uses the `src` layout, you need to set the `PYTHONPATH` environment variable:
+Since the package is installed in editable mode, you can run tests directly without setting PYTHONPATH:
 
 ```bash
 # Install test dependencies
 pip install -r requirements.txt
 
-# Run all tests (correct way with PYTHONPATH)
-export PYTHONPATH=src
+# Run all tests
 pytest --cov=src/planka_mcp --cov-report=term-missing
 
 # Run specific test file
-export PYTHONPATH=src
 pytest tests/test_cards.py -v
 
 # View coverage report
@@ -164,7 +183,7 @@ open htmlcov/index.html
 
 Alternatively, you can use the virtual environment's pytest directly:
 ```bash
-PYTHONPATH=src venv/bin/pytest --cov=src/planka_mcp --cov-report=term-missing
+venv/bin/pytest --cov=src/planka_mcp --cov-report=term-missing
 ```
 
 ### Test with MCP Inspector
