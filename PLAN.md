@@ -55,12 +55,13 @@ This plan outlines a comprehensive approach to improve the planka-mcp repository
 - [ ] Add edge case tests (no matches, multiple matches)
 - [ ] Target: Increase search.py coverage from 83% to 90%+
 
-### Milestone 2.3: Handler Test Coverage - Tasks & Labels
+### Milestone 2.3: Handler Test Coverage - Tasks & Labels ✅ STARTED
+- [x] Add test for add_task API client/cache not initialized (line 25)
 - [ ] Add comprehensive tests for `planka_add_task` function
 - [ ] Add tests for `planka_update_task` function
 - [ ] Add tests for `planka_add_card_label` function
 - [ ] Add tests for `planka_remove_card_label` function
-- [ ] Target: Increase tasks_labels.py coverage from 18% to 70%
+- [ ] Target: Increase tasks_labels.py coverage from 77% to 85%+
 
 ### Milestone 2.4: Handler Test Coverage - Workspace
 - [ ] Add comprehensive tests for `planka_get_workspace` function
