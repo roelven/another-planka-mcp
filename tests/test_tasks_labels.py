@@ -1,6 +1,6 @@
 """Tests for the tasks and labels handler."""
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from planka_mcp.models import (
     AddTaskInput,
@@ -40,6 +40,24 @@ class TestPlankaAddTask:
             assert "Added task" in result
             assert "New Test Task" in result
             mock_planka_api_client.post.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_add_task_not_initialized(self):
+        """Test add_task when API client or cache is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            params = AddTaskInput(card_id="card1", task_name="Test Task")
+            result = await planka_add_task(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+        
+        # Test when cache is None
+        with patch("planka_mcp.instances.api_client", Mock()), \
+             patch("planka_mcp.instances.cache", None):
+            params = AddTaskInput(card_id="card1", task_name="Test Task")
+            result = await planka_add_task(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
 
 
 class TestPlankaUpdateTask:
