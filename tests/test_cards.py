@@ -338,6 +338,33 @@ class TestPlankaCreateCard:
             assert "Error: List ID 'invalid_list' not found" in result
 
 
+    @pytest.mark.asyncio
+    async def test_create_card_not_initialized(self):
+        """Test create_card when API client or cache is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            params = CreateCardInput(
+                list_id="list1",
+                name="Test Card",
+                description="Test Description"
+            )
+            result = await planka_create_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+        
+        # Test when cache is None
+        with patch("planka_mcp.instances.api_client", Mock()), \
+             patch("planka_mcp.instances.cache", None):
+            params = CreateCardInput(
+                list_id="list1",
+                name="Test Card",
+                description="Test Description"
+            )
+            result = await planka_create_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+
+
 class TestPlankaUpdateCard:
     """Test planka_update_card tool."""
 
