@@ -35,12 +35,13 @@ This plan outlines a comprehensive approach to improve the planka-mcp repository
 ## Phase 2: Test Coverage Improvement (Week 2-3) 🚀 IN PROGRESS
 **Goal**: Increase test coverage from 80.85% to 90% (exceed goal)
 
-### Milestone 2.1: Handler Test Coverage - Cards
+### Milestone 2.1: Handler Test Coverage - Cards ✅ IN PROGRESS
+- [x] Add test for API client not initialized error case (line 33)
 - [ ] Add comprehensive tests for `planka_list_cards` function
 - [ ] Add tests for `planka_get_card` function
 - [ ] Add tests for `planka_create_card` function
 - [ ] Add tests for `planka_update_card` function
-- [ ] Target: Increase cards.py coverage from 8% to 70%
+- [ ] Target: Increase cards.py coverage from 76% to 85%+
 
 ### Milestone 2.2: Handler Test Coverage - Search
 - [ ] Add comprehensive tests for `planka_find_and_get_card` function
