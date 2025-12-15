@@ -46,12 +46,12 @@ This plan outlines a comprehensive approach to improve the planka-mcp repository
 - [ ] Add tests for `planka_get_card` function
 - [ ] Add tests for `planka_create_card` function
 - [ ] Add tests for `planka_update_card` function
-- [ ] Target: Increase cards.py coverage from 76% to 85%+
+- [ ] Target: Increase cards.py coverage from 80% to 85%+
 
-### Milestone 2.2: Handler Test Coverage - Search
+### Milestone 2.2: Handler Test Coverage - Search ✅ STARTED
 - [ ] Add comprehensive tests for `planka_find_and_get_card` function
 - [ ] Add edge case tests (no matches, multiple matches)
-- [ ] Target: Increase search.py coverage from 15% to 70%
+- [ ] Target: Increase search.py coverage from 73% to 80%+
 
 ### Milestone 2.3: Handler Test Coverage - Tasks & Labels
 - [ ] Add comprehensive tests for `planka_add_task` function
@@ -169,10 +169,10 @@ This plan outlines a comprehensive approach to improve the planka-mcp repository
 
 | Metric | Current | Target | Goal |
 |--------|---------|--------|------|
-| Test Coverage | 80.85% ✅ | 79% ✅ | 90% |
-| Passing Tests | 114/114 ✅ | 114/114 ✅ | 114/114 ✅ |
+| Test Coverage | 81.89% ✅ | 79% ✅ | 90% |
+| Passing Tests | 120/120 ✅ | 114/114 ✅ | 114/114 ✅ |
 | Pylint Rating | 7.75/10 | 8.5/10 | 9.0/10 |
-| Handler Coverage | 76-88% ✅ | 70% ✅ | 85%+ |
+| Handler Coverage | 78-88% ✅ | 70% ✅ | 85%+ |
 | Documentation | Partial | Complete | Comprehensive |
 
 ## Risk Assessment
