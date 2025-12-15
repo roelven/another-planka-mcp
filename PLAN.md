@@ -170,10 +170,10 @@ This plan outlines a comprehensive approach to improve the planka-mcp repository
 
 | Metric | Current | Target | Goal |
 |--------|---------|--------|------|
-| Test Coverage | 81.89% ✅ | 79% ✅ | 90% |
-| Passing Tests | 120/120 ✅ | 114/114 ✅ | 114/114 ✅ |
+| Test Coverage | 82.03% ✅ | 79% ✅ | 90% |
+| Passing Tests | 121/121 ✅ | 114/114 ✅ | 114/114 ✅ |
 | Pylint Rating | 7.75/10 | 8.5/10 | 9.0/10 |
-| Handler Coverage | 78-88% ✅ | 70% ✅ | 85%+ |
+| Handler Coverage | 75-88% ✅ | 70% ✅ | 85%+ |
 | Documentation | Partial | Complete | Comprehensive |
 
 ## Risk Assessment
