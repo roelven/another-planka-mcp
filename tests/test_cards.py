@@ -146,6 +146,61 @@ class TestPlankaListCards:
             assert "offset=50" in result
 
     @pytest.mark.asyncio
+    async def test_list_cards_pagination_edge_cases(self, mock_planka_api_client, sample_board_response):
+        """Test card listing pagination edge cases."""
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client):
+            # Create a response with 5 cards for edge case testing
+            few_cards_response = sample_board_response.copy()
+            cards = []
+            for i in range(1, 6):  # 5 cards total
+                cards.append({
+                    "id": f"card{i}",
+                    "name": f"Test Card {i}",
+                    "listId": "list1",
+                    "boardId": "board1",
+                    "memberIds": [],
+                    "taskLists": [],
+                    "comments": [],
+                    "attachments": []
+                })
+            few_cards_response["included"]["cards"] = cards
+            mock_planka_api_client.get.return_value = few_cards_response
+            
+            # Test offset beyond available cards (offset 10, but only 5 cards)
+            params = ListCardsInput(
+                board_id="board1",
+                limit=10,
+                offset=10,
+                response_format=ResponseFormat.MARKDOWN,
+            )
+            result = await planka_list_cards(params)
+            assert "No cards found" in result
+            
+            # Test limit larger than available cards
+            params = ListCardsInput(
+                board_id="board1",
+                limit=100,
+                offset=0,
+                response_format=ResponseFormat.MARKDOWN,
+            )
+            result = await planka_list_cards(params)
+            # Should show all 5 cards
+            for i in range(1, 6):
+                assert f"Test Card {i}" in result
+            
+            # Test limit=1 (minimum valid limit)
+            params = ListCardsInput(
+                board_id="board1",
+                limit=1,
+                offset=0,
+                response_format=ResponseFormat.MARKDOWN,
+            )
+            result = await planka_list_cards(params)
+            # Should show only the first card
+            assert "Test Card 1" in result
+            assert "Test Card 2" not in result
+
+    @pytest.mark.asyncio
     async def test_list_cards_malformed_card_labels(
         self, mock_planka_api_client, sample_board_response
     ):
