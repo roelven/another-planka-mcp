@@ -40,6 +40,7 @@ This plan outlines a comprehensive approach to improve the planka-mcp repository
 - [x] Add test for label filtering functionality (lines 70-78)
 - [x] Add test for pagination edge cases (lines 82-90)
 - [x] Add test for get_card API client/cache not initialized (line 127)
+- [x] Add test for create_card API client/cache not initialized (line 209)
 - [ ] Add comprehensive tests for `planka_list_cards` function
 - [ ] Add tests for `planka_get_card` function
 - [ ] Add tests for `planka_create_card` function
