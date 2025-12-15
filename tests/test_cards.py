@@ -281,6 +281,25 @@ class TestPlankaGetCard:
             assert parsed["id"] == "card1"
             assert parsed["name"] == "Test Card"
 
+    @pytest.mark.asyncio
+    async def test_get_card_not_initialized(self):
+        """Test get_card when API client or cache is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            params = GetCardInput(card_id="card1")
+            result = await planka_get_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+        
+        # Test when cache is None
+        with patch("planka_mcp.instances.api_client", Mock()), \
+             patch("planka_mcp.instances.cache", None):
+            params = GetCardInput(card_id="card1")
+            result = await planka_get_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+
+
 class TestPlankaCreateCard:
     """Test planka_create_card tool."""
 
