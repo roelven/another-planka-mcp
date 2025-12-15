@@ -4,8 +4,8 @@
 This plan outlines a comprehensive approach to improve the planka-mcp repository by fixing critical issues, improving test coverage to 90%, and enhancing code quality. The plan is structured in small, manageable increments with clear milestones.
 
 ## Current State
-- **Test Coverage**: 83.36% (target: 79% ✅, goal: 90%)
-- **Failing Tests**: 0 out of 126 tests ✅
+- **Test Coverage**: 83.65% (target: 79% ✅, goal: 90%)
+- **Failing Tests**: 0 out of 128 tests ✅
 - **Pylint Rating**: 7.75/10
 - **Critical Issues**: ✅ RESOLVED - Missing imports fixed, test mocking corrected
 
@@ -66,10 +66,12 @@ This plan outlines a comprehensive approach to improve the planka-mcp repository
 - [x] Add tests for `planka_remove_card_label` function
 - [x] Target: Increase tasks_labels.py coverage from 77% to 85%+ ✅ ACHIEVED (84%)
 
-### Milestone 2.4: Handler Test Coverage - Workspace
-- [ ] Add comprehensive tests for `planka_get_workspace` function
-- [ ] Add tests for `fetch_workspace_data` function
-- [ ] Target: Increase workspace.py coverage from 13% to 70%
+### Milestone 2.4: Handler Test Coverage - Workspace ✅ COMPLETED
+- [x] Add comprehensive tests for `planka_get_workspace` function
+- [x] Add tests for `fetch_workspace_data` function
+- [x] Add test for get_workspace cache not initialized (line 116)
+- [x] Add test for fetch_workspace_data API client not initialized (line 15)
+- [x] Target: Increase workspace.py coverage from 88% to 90%+ ✅ ACHIEVED (91%)
 
 **Success Criteria**: Overall test coverage ≥ 79%, all handler modules ≥ 70% coverage
 
