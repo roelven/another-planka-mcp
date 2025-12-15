@@ -1,3 +1,4 @@
+import json
 from typing import List, Dict, Any, Optional
 from ..models import ListCardsInput, GetCardInput, CreateCardInput, UpdateCardInput, ResponseFormat, DetailLevel
 from ..utils import ResponseFormatter, PaginationHelper, handle_api_error
