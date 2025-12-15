@@ -144,18 +144,27 @@ Confirm the Planka user has workspace access.
 
 The project includes a comprehensive test suite with >90% code coverage.
 
+**Important**: Since this project uses the `src` layout, you need to set the `PYTHONPATH` environment variable:
+
 ```bash
 # Install test dependencies
 pip install -r requirements.txt
 
-# Run all tests
-pytest
+# Run all tests (correct way with PYTHONPATH)
+export PYTHONPATH=src
+pytest --cov=src/planka_mcp --cov-report=term-missing
 
-# Run with coverage report
-pytest --cov=planka_mcp --cov-report=html
+# Run specific test file
+export PYTHONPATH=src
+pytest tests/test_cards.py -v
 
 # View coverage report
 open htmlcov/index.html
+```
+
+Alternatively, you can use the virtual environment's pytest directly:
+```bash
+PYTHONPATH=src venv/bin/pytest --cov=src/planka_mcp --cov-report=term-missing
 ```
 
 ### Test with MCP Inspector
