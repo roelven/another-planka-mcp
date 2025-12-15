@@ -1,6 +1,6 @@
 """Tests for the search handler."""
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from planka_mcp.models import FindAndGetCardInput
 from planka_mcp.handlers.search import planka_find_and_get_card
@@ -64,3 +64,21 @@ class TestPlankaFindAndGetCard:
             params = FindAndGetCardInput(query="Nonexistent", board_id="board1")
             result = await planka_find_and_get_card(params)
             assert "No cards found" in result
+
+    @pytest.mark.asyncio
+    async def test_find_and_get_card_not_initialized(self):
+        """Test find_and_get_card when API client or cache is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            params = FindAndGetCardInput(query="test")
+            result = await planka_find_and_get_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+        
+        # Test when cache is None
+        with patch("planka_mcp.instances.api_client", Mock()), \
+             patch("planka_mcp.instances.cache", None):
+            params = FindAndGetCardInput(query="test")
+            result = await planka_find_and_get_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result

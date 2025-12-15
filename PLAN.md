@@ -48,7 +48,8 @@ This plan outlines a comprehensive approach to improve the planka-mcp repository
 - [ ] Add tests for `planka_update_card` function
 - [ ] Target: Increase cards.py coverage from 80% to 85%+
 
-### Milestone 2.2: Handler Test Coverage - Search ✅ STARTED
+### Milestone 2.2: Handler Test Coverage - Search ✅ IN PROGRESS
+- [x] Add test for search API client/cache not initialized (line 32)
 - [ ] Add comprehensive tests for `planka_find_and_get_card` function
 - [ ] Add edge case tests (no matches, multiple matches)
 - [ ] Target: Increase search.py coverage from 73% to 80%+
