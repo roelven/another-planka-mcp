@@ -148,6 +148,109 @@ class TestPlankaCache:
     def test_cache_invalidation(self):
         """Test cache invalidation methods."""
         cache = PlankaCache()
+        
+        # Test workspace invalidation
+        cache.workspace = {"projects": []}
+        cache.invalidate_workspace()
+        assert cache.workspace is None
+        
+        # Test board invalidation
+        cache.board_overviews["board1"] = CacheEntry(data={"name": "Test Board"}, timestamp=time.time(), ttl=180)
+        cache.invalidate_board("board1")
+        assert "board1" not in cache.board_overviews
+        
+        # Test invalidation of non-existent board
+        cache.invalidate_board("non-existent")  # Should not raise error
+
+    @pytest.mark.asyncio
+    async def test_board_overview_cache_miss(self):
+        """Test board overview cache miss."""
+        cache = PlankaCache()
+        
+        async def fetch_func():
+            return {"board": {"id": "board1", "name": "Test Board"}}
+        
+        # First call - cache miss
+        result = await cache.get_board_overview("board1", fetch_func)
+        
+        assert result == {"board": {"id": "board1", "name": "Test Board"}}
+        assert cache.stats["board_overview_misses"] == 1
+        assert cache.stats["board_overview_hits"] == 0
+        assert "board1" in cache.board_overviews
+
+    @pytest.mark.asyncio
+    async def test_board_overview_cache_hit(self):
+        """Test board overview cache hit."""
+        cache = PlankaCache()
+        
+        async def fetch_func():
+            return {"board": {"id": "board1", "name": "Test Board"}}
+        
+        # First call - cache miss
+        await cache.get_board_overview("board1", fetch_func)
+        
+        # Second call - cache hit
+        result = await cache.get_board_overview("board1", fetch_func)
+        
+        assert result == {"board": {"id": "board1", "name": "Test Board"}}
+        assert cache.stats["board_overview_hits"] == 1
+        assert cache.stats["board_overview_misses"] == 1
+
+    @pytest.mark.asyncio
+    async def test_card_cache_miss(self):
+        """Test card cache miss."""
+        cache = PlankaCache()
+        
+        async def fetch_func():
+            return {"card": {"id": "card1", "name": "Test Card"}}
+        
+        # First call - cache miss
+        result = await cache.get_card("card1", fetch_func)
+        
+        assert result == {"card": {"id": "card1", "name": "Test Card"}}
+        assert cache.stats["card_misses"] == 1
+        assert cache.stats["card_hits"] == 0
+        assert "card1" in cache.card_details
+
+    @pytest.mark.asyncio
+    async def test_card_cache_hit(self):
+        """Test card cache hit."""
+        cache = PlankaCache()
+        
+        async def fetch_func():
+            return {"card": {"id": "card1", "name": "Test Card"}}
+        
+        # First call - cache miss
+        await cache.get_card("card1", fetch_func)
+        
+        # Second call - cache hit
+        result = await cache.get_card("card1", fetch_func)
+        
+        assert result == {"card": {"id": "card1", "name": "Test Card"}}
+        assert cache.stats["card_hits"] == 1
+        assert cache.stats["card_misses"] == 1
+
+    @pytest.mark.asyncio
+    async def test_card_cache_expiration(self):
+        """Test card cache entry expiration."""
+        cache = PlankaCache()
+        call_count = 0
+        
+        async def fetch_func():
+            nonlocal call_count
+            call_count += 1
+            return {"card": {"id": "card1", "name": "Test Card"}, "call": call_count}
+        
+        # First call
+        result1 = await cache.get_card("card1", fetch_func)
+        assert result1["call"] == 1
+        
+        # Manually expire the cache
+        cache.card_details["card1"].timestamp = time.time() - 120  # 120 seconds ago (> 60 TTL)
+        
+        # Second call - should fetch again
+        result2 = await cache.get_card("card1", fetch_func)
+        assert result2["call"] == 2
 
         # Set up cache entries
         cache.workspace = CacheEntry({"test": "data"}, time.time(), 300)
