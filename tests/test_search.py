@@ -18,8 +18,8 @@ class TestPlankaFindAndGetCard:
         sample_card_data,
     ):
         """Test finding a single card and getting details."""
-        with patch("planka_mcp.handlers.search.api_client", mock_planka_api_client), \
-             patch("planka_mcp.handlers.search.cache", mock_cache):
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
 
             mock_cache.get_workspace.return_value = sample_workspace_data
             board_response = {"included": {"cards": [sample_card_data]}}
@@ -39,8 +39,8 @@ class TestPlankaFindAndGetCard:
         sample_workspace_data,
     ):
         """Test finding multiple matching cards."""
-        with patch("planka_mcp.handlers.search.api_client", mock_planka_api_client), \
-             patch("planka_mcp.handlers.search.cache", mock_cache):
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
             mock_cache.get_workspace.return_value = sample_workspace_data
             board_response = {"included": {"cards": [{"id": "card1", "name": "Test Card 1"}, {"id": "card2", "name": "Test Card 2"}]}}
             mock_planka_api_client.get.return_value = board_response
@@ -56,8 +56,8 @@ class TestPlankaFindAndGetCard:
         sample_workspace_data,
     ):
         """Test finding no matching cards."""
-        with patch("planka_mcp.handlers.search.api_client", mock_planka_api_client), \
-             patch("planka_mcp.handlers.search.cache", mock_cache):
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
             mock_cache.get_workspace.return_value = sample_workspace_data
             board_response = {"included": {"cards": []}}
             mock_planka_api_client.get.return_value = board_response

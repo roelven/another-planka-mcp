@@ -16,8 +16,8 @@ class TestPlankaGetWorkspace:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test successful workspace retrieval in markdown format."""
-        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
-             patch('planka_mcp.handlers.workspace.cache', mock_cache):
+        with patch('planka_mcp.instances.api_client', mock_planka_api_client), \
+             patch('planka_mcp.instances.cache', mock_cache):
             mock_cache.get_workspace.return_value = sample_workspace_data
             params = GetWorkspaceInput(response_format=ResponseFormat.MARKDOWN)
             result = await planka_get_workspace(params)
@@ -31,8 +31,8 @@ class TestPlankaGetWorkspace:
         self, mock_planka_api_client, mock_cache, sample_workspace_data
     ):
         """Test successful workspace retrieval in JSON format."""
-        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
-             patch('planka_mcp.handlers.workspace.cache', mock_cache):
+        with patch('planka_mcp.instances.api_client', mock_planka_api_client), \
+             patch('planka_mcp.instances.cache', mock_cache):
             mock_cache.get_workspace.return_value = sample_workspace_data
             params = GetWorkspaceInput(response_format=ResponseFormat.JSON)
             result = await planka_get_workspace(params)
@@ -45,8 +45,8 @@ class TestPlankaGetWorkspace:
         self, mock_planka_api_client, mock_cache
     ):
         """Test workspace retrieval handles API errors."""
-        with patch('planka_mcp.handlers.workspace.api_client', mock_planka_api_client), \
-             patch('planka_mcp.handlers.workspace.cache', mock_cache):
+        with patch('planka_mcp.instances.api_client', mock_planka_api_client), \
+             patch('planka_mcp.instances.cache', mock_cache):
             mock_response = Mock()
             mock_response.status_code = 401
             error = httpx.HTTPStatusError("Unauthorized", request=Mock(), response=mock_response)
@@ -62,7 +62,7 @@ class TestFetchWorkspaceData:
     @pytest.mark.asyncio
     async def test_fetch_workspace_data_success(self, mock_planka_api_client):
         """Test successful fetch of workspace data."""
-        with patch("planka_mcp.handlers.workspace.api_client", mock_planka_api_client):
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client):
             # Mock the API responses
             mock_planka_api_client.get.side_effect = [
                 {"items": [{"id": "proj1", "name": "Test Project"}]},  # projects
@@ -102,7 +102,7 @@ class TestFetchWorkspaceData:
     @pytest.mark.asyncio
     async def test_fetch_workspace_data_api_error(self, mock_planka_api_client):
         """Test that API errors are propagated."""
-        with patch("planka_mcp.handlers.workspace.api_client", mock_planka_api_client):
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client):
             mock_planka_api_client.get.side_effect = httpx.HTTPStatusError(
                 "API Error", request=Mock(), response=Mock(status_code=500)
             )
