@@ -1,6 +1,8 @@
 # Another Planka MCP
 A Model Context Protocol (MCP) server that enables AI Chat clients to read and update your Planka boards using the Planka REST API.
 
+[![Tests](https://github.com/roelven/another-planka-mcp/actions/workflows/test.yml/badge.svg?branch=main&event=push)](https://github.com/roelven/another-planka-mcp/actions/workflows/test.yml)
+
 ## Overview
 Another Planka MCP Server provides you with a lightweight bridge between MCP clients and your self‑hosted Planka instance. It exposes projects, boards, lists, cards, tasks, and labels through MCP tools, allowing assistants to retrieve workspace data and perform write operations such as creating or updating cards.
 
