@@ -15,6 +15,7 @@ from planka_mcp import (
     FindAndGetCardInput,
     AddCardLabelInput,
     RemoveCardLabelInput,
+    DeleteCardInput,
     ResponseFormat,
     DetailLevel,
     ResponseContext
@@ -410,6 +411,35 @@ class TestRemoveCardLabelInput:
         """Test label_id exceeding max length."""
         with pytest.raises(ValidationError):
             RemoveCardLabelInput(card_id="card123", label_id="A" * 101)
+
+
+class TestDeleteCardInput:
+    """Test DeleteCardInput model."""
+
+    def test_valid_input(self):
+        """Test valid DeleteCardInput."""
+        params = DeleteCardInput(card_id="card123")
+        assert params.card_id == "card123"
+
+    def test_missing_card_id(self):
+        """Test DeleteCardInput with missing card_id."""
+        with pytest.raises(ValidationError):
+            DeleteCardInput()
+
+    def test_empty_card_id(self):
+        """Test DeleteCardInput with empty card_id."""
+        with pytest.raises(ValidationError):
+            DeleteCardInput(card_id="")
+
+    def test_card_id_too_long(self):
+        """Test DeleteCardInput with card_id too long."""
+        with pytest.raises(ValidationError):
+            DeleteCardInput(card_id="a" * 101)
+
+    def test_string_stripping(self):
+        """Test that DeleteCardInput strips whitespace."""
+        params = DeleteCardInput(card_id="  card123  ")
+        assert params.card_id == "card123"
 
 
 class TestEnums:

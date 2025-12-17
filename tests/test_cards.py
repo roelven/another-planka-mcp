@@ -9,6 +9,7 @@ from planka_mcp.models import (
     GetCardInput,
     CreateCardInput,
     UpdateCardInput,
+    DeleteCardInput,
     ResponseFormat,
     DetailLevel,
 )
@@ -17,6 +18,7 @@ from planka_mcp.handlers.cards import (
     planka_get_card,
     planka_create_card,
     planka_update_card,
+    planka_delete_card,
 )
 
 
@@ -451,6 +453,114 @@ class TestPlankaUpdateCard:
             params = UpdateCardInput(card_id="card1")
             result = await planka_update_card(params)
             assert "Updated card" in result
+
+
+class TestPlankaDeleteCard:
+    """Test planka_delete_card tool."""
+
+    @pytest.mark.asyncio
+    async def test_delete_card_success(
+        self, mock_planka_api_client, mock_cache, sample_card_data
+    ):
+        """Test successful card deletion."""
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
+
+            # Mock the get call to return card details (for board ID)
+            mock_planka_api_client.get.return_value = {
+                "item": {
+                    "id": "card1",
+                    "name": "Test Card",
+                    "boardId": "board1"
+                }
+            }
+            # Mock the delete call
+            mock_planka_api_client.delete.return_value = None
+
+            params = DeleteCardInput(card_id="card1")
+            result = await planka_delete_card(params)
+
+            # Verify the result contains success message
+            assert "✓ Deleted card" in result
+            assert "Test Card" in result
+            assert "card1" in result
+
+            # Verify API calls were made
+            mock_planka_api_client.get.assert_called_once_with("cards/card1")
+            mock_planka_api_client.delete.assert_called_once_with("cards/card1")
+
+            # Verify cache invalidation was called
+            mock_cache.invalidate_card.assert_called_once_with("card1")
+            mock_cache.invalidate_board.assert_called_once_with("board1")
+
+    @pytest.mark.asyncio
+    async def test_delete_card_not_initialized(self):
+        """Test delete_card when API client or cache is not initialized."""
+        # Test when API client is None
+        with patch("planka_mcp.instances.api_client", None):
+            params = DeleteCardInput(card_id="card1")
+            result = await planka_delete_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+        
+        # Test when cache is None
+        with patch("planka_mcp.instances.api_client", Mock()), \
+             patch("planka_mcp.instances.cache", None):
+            params = DeleteCardInput(card_id="card1")
+            result = await planka_delete_card(params)
+            assert "Error" in result
+            assert "API client or Cache not initialized" in result
+
+    @pytest.mark.asyncio
+    async def test_delete_card_api_error(
+        self, mock_planka_api_client, mock_cache
+    ):
+        """Test delete_card with API error."""
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
+
+            # Mock the get call to raise an exception
+            mock_planka_api_client.get.side_effect = httpx.HTTPStatusError(
+                "Not found",
+                request=Mock(),
+                response=Mock(status_code=404)
+            )
+
+            params = DeleteCardInput(card_id="invalid_card")
+            result = await planka_delete_card(params)
+
+            # Verify error handling
+            assert "Error" in result
+            assert "Resource not found" in result
+
+    @pytest.mark.asyncio
+    async def test_delete_card_missing_board_id(
+        self, mock_planka_api_client, mock_cache
+    ):
+        """Test delete_card when card has no board ID."""
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
+
+            # Mock the get call to return card without board ID
+            mock_planka_api_client.get.return_value = {
+                "item": {
+                    "id": "card1",
+                    "name": "Test Card"
+                    # No boardId
+                }
+            }
+            mock_planka_api_client.delete.return_value = None
+
+            params = DeleteCardInput(card_id="card1")
+            result = await planka_delete_card(params)
+
+            # Verify the result contains success message
+            assert "✓ Deleted card" in result
+            assert "Test Card" in result
+
+            # Verify cache invalidation was called for card but not board
+            mock_cache.invalidate_card.assert_called_once_with("card1")
+            mock_cache.invalidate_board.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_update_card_not_initialized(self):

@@ -16,14 +16,14 @@ from planka_mcp.api_client import PlankaAPIClient, initialize_auth
 from planka_mcp.cache import PlankaCache
 from planka_mcp.handlers import (
     planka_get_workspace, planka_list_cards, planka_find_and_get_card,
-    planka_get_card, planka_create_card, planka_update_card,
+    planka_get_card, planka_create_card, planka_update_card, planka_delete_card,
     planka_add_task, planka_update_task, planka_add_card_label,
     planka_remove_card_label
 )
 from planka_mcp.models import (
     GetWorkspaceInput, ListCardsInput, GetCardInput, CreateCardInput,
     UpdateCardInput, FindAndGetCardInput, AddTaskInput, UpdateTaskInput,
-    AddCardLabelInput, RemoveCardLabelInput
+    AddCardLabelInput, RemoveCardLabelInput, DeleteCardInput
 )
 from mcp.server.fastmcp import FastMCP
 
@@ -84,6 +84,11 @@ async def mcp_add_card_label(params: AddCardLabelInput):
 async def mcp_remove_card_label(params: RemoveCardLabelInput):
     """Remove a label from a card."""
     return await planka_remove_card_label(params)
+
+@mcp.tool("planka_delete_card")
+async def mcp_delete_card(params: DeleteCardInput):
+    """Delete a card from Planka."""
+    return await planka_delete_card(params)
 
 async def initialize_server():
     """Initialize the server components."""
