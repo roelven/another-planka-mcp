@@ -49,8 +49,8 @@ async def planka_add_task(params: AddTaskInput) -> str:
         # If no task list exists, create one
         if not task_list:
             response = await instances.api_client.post(
-                f"cards/{params.card_id}/task-lists",
-                {"name": task_list_name}
+                "task-lists",
+                {"name": task_list_name, "cardId": params.card_id}
             )
             task_list = response.get("item", {})
 

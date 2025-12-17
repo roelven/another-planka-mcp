@@ -1,6 +1,6 @@
 """Tests for the tasks and labels handler."""
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, call
 
 from planka_mcp.models import (
     AddTaskInput,
@@ -39,7 +39,43 @@ class TestPlankaAddTask:
 
             assert "Added task" in result
             assert "New Test Task" in result
-            mock_planka_api_client.post.assert_called_once()
+            # Verify the correct endpoint and payload are used for adding task to existing task list
+            mock_planka_api_client.post.assert_called_once_with(
+                "task-lists/tasklist1/tasks",
+                {"name": "New Test Task"}
+            )
+
+    @pytest.mark.asyncio
+    async def test_add_task_create_new_task_list(
+        self,
+        mock_planka_api_client,
+        mock_cache,
+        sample_card_data
+    ):
+        """Test successful task creation when no task list exists."""
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
+            # Card has no task lists
+            card_response = {"included": {"taskLists": []}}
+            created_task_list = {"item": {"id": "new_tasklist", "name": "Tasks"}}
+            created_task = {"item": {"id": "new_task", "name": "New Test Task"}}
+            
+            # Mock the API calls - first call creates task list, second call creates task
+            mock_planka_api_client.get.return_value = card_response
+            mock_planka_api_client.post.side_effect = [created_task_list, created_task]
+
+            params = AddTaskInput(card_id="card1", task_name="New Test Task")
+            result = await planka_add_task(params)
+
+            assert "Added task" in result
+            assert "New Test Task" in result
+            # Verify the correct endpoints and payloads are used
+            calls = mock_planka_api_client.post.call_args_list
+            assert len(calls) == 2
+            # First call should create task list
+            assert calls[0] == call("task-lists", {"name": "Tasks", "cardId": "card1"})
+            # Second call should create task
+            assert calls[1] == call("task-lists/new_tasklist/tasks", {"name": "New Test Task"})
 
     @pytest.mark.asyncio
     async def test_add_task_not_initialized(self):
