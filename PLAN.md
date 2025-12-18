@@ -6,12 +6,24 @@ Planka-MCP is now a **feature-complete** product with comprehensive functionalit
 
 ### ✅ Bug Fix Completed
 
-**Task Operations Bug - FIXED**: The critical bug in the task operations implementation has been successfully resolved. The issue was that the API endpoint was using `task-lists` (kebab-case) but the Planka API expects `taskLists` (camelCase).
+**Task Operations Bug - FIXED**: The critical bug in the task operations implementation has been successfully resolved. The issue was using incorrect API endpoint patterns for task operations.
+
+**Root Cause Analysis**:
+- Initial assumption: API uses camelCase (`taskLists`) based on response structure
+- Actual issue: API uses kebab-case but with nested resource pattern
+- Correct pattern: `cards/{card_id}/task-lists` for creating task lists on cards
 
 **Fix Applied**: 
-- Updated API endpoints from `task-lists` to `taskLists`
-- Updated from `task-lists/{id}/tasks` to `taskLists/{id}/tasks`
+- Changed task list creation endpoint from `taskLists` to `cards/{card_id}/task-lists`
+- Kept task creation endpoint as `task-lists/{task_list_id}/tasks`
+- Updated all tests to verify the correct endpoint pattern
 - Added comprehensive test coverage to prevent regression
+
+**API Endpoint Pattern**:
+```
+POST /api/cards/{card_id}/task-lists      # Create task list on a card
+POST /api/task-lists/{task_list_id}/tasks # Create task in a task list
+```
 
 **Impact**: Users can now successfully add tasks to cards using the `planka_add_task` tool.
 
@@ -44,16 +56,16 @@ Planka-MCP is now a **feature-complete** product with comprehensive functionalit
 
 **TDD Approach - COMPLETED**:
 1. ✅ **Create failing test**: Wrote a test that reproduced the endpoint issue
-2. ✅ **Implement fix**: Changed endpoint from `task-lists` to `taskLists`
+2. ✅ **Implement fix**: Changed endpoint pattern to match Planka API structure
 3. ✅ **Verify fix**: Updated test to verify correct endpoint usage
 4. ✅ **Regression testing**: All 155 tests pass with 88.19% coverage
 
 **Actual Outcome**: ✅ Task operations now work correctly with the Planka API.
 
 **Files Modified**:
-- `src/planka_mcp/handlers/tasks_labels.py` - Fixed API endpoints
-- `tests/test_tasks_labels.py` - Added test and updated assertions
-- `PLAN.md` - Updated status and documentation
+- `src/planka_mcp/handlers/tasks_labels.py` - Fixed API endpoints to use correct pattern
+- `tests/test_tasks_labels.py` - Added comprehensive test and updated assertions
+- `PLAN.md` - Updated status, documentation, and API endpoint examples
 
 ## 🚀 Roadmap (Unspecified Ambitions)
 
