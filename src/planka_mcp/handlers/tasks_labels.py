@@ -105,9 +105,10 @@ async def planka_delete_task(params: DeleteTaskInput) -> str:
 
     try:
         # Get task details first to get task name for confirmation
+        # The API client now handles empty responses gracefully
         task_response = await instances.api_client.get(f"tasks/{params.task_id}")
-        task = task_response.get("item", {})
-        task_name = task.get("name", "Unknown Task")
+        task = task_response.get("item", {}) if task_response else {}
+        task_name = task.get("name", f"Task {params.task_id}")
 
         # Delete the task using DELETE /api/tasks/{taskId}
         # The API client now handles empty responses (204 No Content) gracefully

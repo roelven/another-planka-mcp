@@ -47,7 +47,14 @@ class PlankaAPIClient:
                 files=files
             )
             response.raise_for_status()
-            return response.json()
+            
+            # Handle empty responses (e.g., 204 No Content)
+            # Some endpoints return empty responses even for successful requests
+            try:
+                return response.json()
+            except Exception:
+                # If response is empty, return empty dict
+                return {}
         except httpx.HTTPStatusError as e:
             raise e
         except Exception as e:
