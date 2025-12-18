@@ -47,7 +47,7 @@ POST /api/cards/{cardId}/tasks - Create task directly on card
 ### Core Features Implemented
 - ✅ **Workspace Management**: Get complete workspace structure
 - ✅ **Card Operations**: List, get, create, update, and delete cards
-- ✅ **Task Management**: Add and update tasks on cards (FIXED: Correct API endpoint)
+- ✅ **Task Management**: Add, update, and delete tasks on cards (FIXED: Correct API endpoint)
 - ✅ **Label Management**: Add and remove labels from cards
 - ✅ **Search Functionality**: Find cards by search queries
 - ✅ **Comprehensive API Integration**: Full Planka API coverage
@@ -56,10 +56,10 @@ POST /api/cards/{cardId}/tasks - Create task directly on card
 
 ### Quality Achievements
 - ✅ **Test Coverage**: 88.19% (exceeds 79% target)
-- ✅ **Test Suite**: 154 tests, 100% passing
+- ✅ **Test Suite**: 161 tests, 100% passing (added 7 new tests for task deletion)
 - ✅ **Code Quality**: Consistent patterns and conventions
 - ✅ **Documentation**: Comprehensive docstrings and usage examples
-- ✅ **MCP Integration**: 11 tools registered and ready for Claude Desktop
+- ✅ **MCP Integration**: 12 tools registered and ready for Claude Desktop (added planka_delete_task)
 
 ## 🚀 Final Fix Implementation (TDD Approach)
 
@@ -110,8 +110,8 @@ The following items represent potential future enhancements. These are not commi
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
 | Test Coverage | 88.19% | 79% | ✅ Exceeds target |
-| Passing Tests | 154/154 | 143/143 | ✅ 100% Success |
-| MCP Tools | 11 | 10 | ✅ Feature complete |
+| Passing Tests | 161/161 | 143/143 | ✅ 100% Success (7 new tests added) |
+| MCP Tools | 12 | 10 | ✅ Feature complete (added task deletion) |
 | Handler Coverage | 75-96% | 70% | ✅ Exceeds target |
 
 ## 🎯 Product Vision
@@ -177,8 +177,35 @@ Planka-MCP is now a **fully production-ready** product that provides comprehensi
 1. ✅ **Identified the root cause**: Wrong API endpoint causing 404 errors
 2. ✅ **Confirmed correct endpoint**: `POST /api/cards/{cardId}/tasks`
 3. ✅ **Implemented the fix**: Simplified task creation logic
-4. ✅ **Verified with tests**: 154/154 tests passing, 88% coverage
+4. ✅ **Verified with tests**: 161/161 tests passing, 88% coverage
 5. ✅ **No regressions**: All existing functionality preserved
+
+### New Feature: Task Deletion - COMPLETED ✅
+
+**Added comprehensive task deletion functionality**:
+
+1. ✅ **New tool**: `planka_delete_task` for permanent task removal
+2. ✅ **API endpoint**: `DELETE /api/tasks/{taskId}`
+3. ✅ **Input model**: `DeleteTaskInput` with validation
+4. ✅ **Error handling**: Robust error management
+5. ✅ **Tests**: 7 comprehensive tests (5 model + 2 handler)
+6. ✅ **Documentation**: Complete docstrings and examples
+
+**Design Decision**: Created separate tool instead of extending `update_task` because:
+- **Safety**: Deletion is destructive and should be explicit
+- **Clarity**: Separate tools have clear, unambiguous purposes
+- **Consistency**: Follows existing `planka_delete_card` pattern
+- **Token efficiency**: "Delete task abc123" (4 tokens) vs "Update task abc123 with delete_task=true" (8 tokens)
+- **User experience**: Matches user expectations from other tools
+
+**API Pattern**:
+```
+DELETE /api/tasks/{taskId} - Permanently remove a task
+```
+
+**Usage Examples**:
+- "Delete task abc123" → Removes the task permanently
+- "Remove task xyz789" → Deletes the task from the card
 
 ### Deployment Status
 **✅ READY FOR PRODUCTION DEPLOYMENT**
@@ -191,6 +218,7 @@ All core functionality is working, all tests are passing, and the system exceeds
 - **v1.0.0**: Initial feature-complete release
 - **v1.0.1**: Added delete card functionality
 - **v1.0.2**: **FINAL BUG FIX** - Corrected task endpoint to `POST /api/cards/{cardId}/tasks`
+- **v1.0.3**: **NEW FEATURE** - Added task deletion functionality with `planka_delete_task` tool
 
 ### Breaking Changes
 - **None**: This fix maintains full backward compatibility
