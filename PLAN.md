@@ -13,28 +13,41 @@ Planka-MCP is now a **feature-complete** product with comprehensive functionalit
 - Actual discovery: API uses camelCase (`taskLists`) consistently
 - Evidence: Response structure shows `"taskLists": []` in card data
 - Verification: Multiple endpoint patterns tested and analyzed
+- **Final confirmation**: Official Swagger documentation at https://plankanban.github.io/planka/swagger-ui/#/Tasks/createTask
 
 **Fix Applied**: 
 - Changed task list creation endpoint to `taskLists` (camelCase)
-- Changed task creation endpoint to `taskLists/{task_list_id}/tasks` (camelCase)
+- Changed task creation endpoint to `taskLists/{taskListId}/tasks` (camelCase)
+- Added required `position` parameter to both endpoints (default: 65535)
 - Card ID is passed in request body, not URL path
-- Updated all tests to verify the correct endpoint pattern
+- Updated all tests to verify correct endpoint usage and parameters
 - Added comprehensive test coverage to prevent regression
 
-**API Endpoint Pattern**:
+**API Endpoint Pattern** (from official Swagger docs):
 ```
 POST /api/taskLists                    # Create task list (cardId in body)
-POST /api/taskLists/{task_list_id}/tasks # Create task in task list
+POST /api/taskLists/{taskListId}/tasks # Create task in task list
 ```
 
 **Request Body Examples**:
 ```json
-// Create task list
-{"name": "Tasks", "cardId": "1665566661618435621"}
+// Create task list (POST /api/taskLists)
+{
+  "name": "Tasks", 
+  "cardId": "1665566661618435621",
+  "position": 65535
+}
 
-// Create task
-{"name": "Kleur kiezen"}
+// Create task (POST /api/taskLists/{taskListId}/tasks)
+{
+  "name": "Kleur kiezen",
+  "position": 65535
+}
 ```
+
+**Swagger Documentation Reference**:
+- Task List Creation: https://plankanban.github.io/planka/swagger-ui/#/TaskLists/createTaskList
+- Task Creation: https://plankanban.github.io/planka/swagger-ui/#/Tasks/createTask
 
 **Impact**: Users can now successfully add tasks to cards using the `planka_add_task` tool.
 
