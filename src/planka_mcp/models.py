@@ -290,3 +290,18 @@ class RemoveCardLabelInput(BaseModel):
         min_length=1,
         max_length=100
     )
+
+class DeleteCardInput(BaseModel):
+    """Input for deleting a card."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    card_id: str = Field(
+        ...,
+        description="ID of the card to delete",
+        min_length=1,
+        max_length=100
+    )

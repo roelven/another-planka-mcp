@@ -1,6 +1,6 @@
 import json
 from typing import List, Dict, Any, Optional
-from ..models import ListCardsInput, GetCardInput, CreateCardInput, UpdateCardInput, ResponseFormat, DetailLevel
+from ..models import ListCardsInput, GetCardInput, CreateCardInput, UpdateCardInput, DeleteCardInput, ResponseFormat, DetailLevel
 from ..utils import ResponseFormatter, PaginationHelper, handle_api_error
 from ..api_client import PlankaAPIClient
 from ..cache import PlankaCache
@@ -317,6 +317,46 @@ async def planka_update_card(params: UpdateCardInput) -> str:
         update_str = ", ".join(updates) if updates else "card"
 
         return f"✓ Updated {update_str} for card: **{card.get('name', 'Untitled')}** (ID: `{card.get('id', params.card_id)}`)"
+
+    except Exception as e:
+        return handle_api_error(e)
+
+
+async def planka_delete_card(params: DeleteCardInput) -> str:
+    """Delete a card from Planka.
+
+    Permanently removes a card from the board. Invalidates relevant caches automatically.
+
+    Args:
+        params (DeleteCardInput): Card ID to delete
+
+    Returns:
+        str: Confirmation message with deleted card ID
+
+    Examples:
+        - "Delete card abc123" → Removes the card from the board
+        - "Remove card xyz789" → Deletes the card permanently
+    """
+    if instances.api_client is None or instances.cache is None:
+        return handle_api_error(RuntimeError("API client or Cache not initialized"))
+
+    try:
+        # First, get the card details to get the board ID for cache invalidation
+        card_detail = await instances.api_client.get(f"cards/{params.card_id}")
+        card = card_detail.get("item", {})
+        board_id = card.get("boardId")
+
+        # Delete the card
+        await instances.api_client.delete(f"cards/{params.card_id}")
+
+        # Invalidate caches
+        instances.cache.invalidate_card(params.card_id)
+        if board_id:
+            instances.cache.invalidate_board(board_id)
+
+        # Return confirmation
+        card_name = card.get("name", "Unknown Card")
+        return f"✓ Deleted card: **{card_name}** (ID: `{params.card_id}`)"
 
     except Exception as e:
         return handle_api_error(e)
