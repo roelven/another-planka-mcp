@@ -14,7 +14,7 @@ from .workspace import fetch_workspace_data
 async def planka_add_task(params: AddTaskInput) -> str:
     """Add a task (checklist item) to a card."
 
-    Creates a task in the specified task list (or creates "Tasks" list if not exists).
+    Creates a task directly on the card using the correct Planka API endpoint.
     Common pattern for tracking subtasks within cards.
 
     Args:
@@ -31,32 +31,10 @@ async def planka_add_task(params: AddTaskInput) -> str:
         return handle_api_error(RuntimeError("API client or Cache not initialized"))
 
     try:
-        # First, get the card to check for existing task lists
-        card_detail = await instances.api_client.get(f"cards/{params.card_id}")
-        included = card_detail.get("included", {})
-        task_lists = included.get("taskLists", [])
-
-        # Find or create the task list
-        task_list = None
-        task_list_name = params.task_list_name or "Tasks"
-
-        # Look for existing task list with matching name
-        for tl in task_lists:
-            if tl.get("name", "").lower() == task_list_name.lower():
-                task_list = tl
-                break
-
-        # If no task list exists, create one
-        if not task_list:
-            response = await instances.api_client.post(
-                "taskLists",
-                {"name": task_list_name, "cardId": params.card_id, "position": 65535}
-            )
-            task_list = response.get("item", {})
-
-        # Create the task
+        # Create the task directly on the card using the correct endpoint
+        # POST /api/cards/{cardId}/tasks - as per official Planka API documentation
         task_response = await instances.api_client.post(
-            f"taskLists/{task_list['id']}/tasks",
+            f"cards/{params.card_id}/tasks",
             {"name": params.task_name, "position": 65535}
         )
         task = task_response.get("item", {})
@@ -64,7 +42,7 @@ async def planka_add_task(params: AddTaskInput) -> str:
         # Invalidate card cache
         instances.cache.invalidate_card(params.card_id)
 
-        return f"✓ Added task: **{task.get('name', 'Unnamed')}** to list '{task_list.get('name', 'Tasks')}' (Task ID: `{task.get('id', 'N/A')}`)"
+        return f"✓ Added task: **{task.get('name', 'Unnamed')}** (Task ID: `{task.get('id', 'N/A')}`)"
 
     except Exception as e:
         return handle_api_error(e)

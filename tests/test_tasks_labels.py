@@ -20,18 +20,47 @@ class TestPlankaAddTask:
     """Test planka_add_task tool."""
 
     @pytest.mark.asyncio
-    async def test_add_task_success(
+    async def test_add_task_with_correct_endpoint(
         self,
         mock_planka_api_client,
         mock_cache,
         sample_card_data
     ):
-        """Test successful task creation."""
+        """Test successful task creation using correct API endpoint."""
         with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
              patch("planka_mcp.instances.cache", mock_cache):
-            card_response = {"included": {"taskLists": [{"id": "tasklist1", "name": "Tasks"}]}}
+            # Mock the API to return success for the correct endpoint
             created_task = {"item": {"id": "new_task", "name": "New Test Task"}}
+            mock_planka_api_client.post.return_value = created_task
+            
+            # Mock the get method to return a card without task lists
+            # This simulates the scenario where we want to create a task directly on the card
+            card_response = {"included": {"taskLists": []}}
             mock_planka_api_client.get.return_value = card_response
+
+            params = AddTaskInput(card_id="card1", task_name="New Test Task")
+            result = await planka_add_task(params)
+
+            assert "Added task" in result
+            assert "New Test Task" in result
+            # Verify the correct endpoint is used: POST /api/cards/{cardId}/tasks
+            mock_planka_api_client.post.assert_called_once_with(
+                "cards/card1/tasks",
+                {"name": "New Test Task", "position": 65535}
+            )
+
+    @pytest.mark.asyncio
+    async def test_add_task_simple_case(
+        self,
+        mock_planka_api_client,
+        mock_cache,
+        sample_card_data
+    ):
+        """Test successful task creation using the simplified direct endpoint."""
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
+            # Mock the API to return success for the correct endpoint
+            created_task = {"item": {"id": "new_task", "name": "New Test Task"}}
             mock_planka_api_client.post.return_value = created_task
 
             params = AddTaskInput(card_id="card1", task_name="New Test Task")
@@ -39,43 +68,11 @@ class TestPlankaAddTask:
 
             assert "Added task" in result
             assert "New Test Task" in result
-            # Verify the correct endpoint and payload are used for adding task to existing task list
+            # Verify the correct endpoint is used: POST /api/cards/{cardId}/tasks
             mock_planka_api_client.post.assert_called_once_with(
-                "taskLists/tasklist1/tasks",
+                "cards/card1/tasks",
                 {"name": "New Test Task", "position": 65535}
             )
-
-    @pytest.mark.asyncio
-    async def test_add_task_create_new_task_list(
-        self,
-        mock_planka_api_client,
-        mock_cache,
-        sample_card_data
-    ):
-        """Test successful task creation when no task list exists."""
-        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
-             patch("planka_mcp.instances.cache", mock_cache):
-            # Card has no task lists
-            card_response = {"included": {"taskLists": []}}
-            created_task_list = {"item": {"id": "new_tasklist", "name": "Tasks"}}
-            created_task = {"item": {"id": "new_task", "name": "New Test Task"}}
-            
-            # Mock the API calls - first call creates task list, second call creates task
-            mock_planka_api_client.get.return_value = card_response
-            mock_planka_api_client.post.side_effect = [created_task_list, created_task]
-
-            params = AddTaskInput(card_id="card1", task_name="New Test Task")
-            result = await planka_add_task(params)
-
-            assert "Added task" in result
-            assert "New Test Task" in result
-            # Verify the correct endpoints and payloads are used
-            calls = mock_planka_api_client.post.call_args_list
-            assert len(calls) == 2
-            # First call should create task list with position
-            assert calls[0] == call("taskLists", {"name": "Tasks", "cardId": "card1", "position": 65535})
-            # Second call should create task with position
-            assert calls[1] == call("taskLists/new_tasklist/tasks", {"name": "New Test Task", "position": 65535})
 
     @pytest.mark.asyncio
     async def test_add_task_not_initialized(self):
