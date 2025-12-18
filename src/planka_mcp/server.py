@@ -16,10 +16,10 @@ import os
 import sys
 import json
 from typing import Optional
-from .models import GetWorkspaceInput, ListCardsInput, GetCardInput, CreateCardInput, UpdateCardInput, FindAndGetCardInput, AddTaskInput, UpdateTaskInput, AddCardLabelInput, RemoveCardLabelInput
+from .models import GetWorkspaceInput, ListCardsInput, GetCardInput, CreateCardInput, UpdateCardInput, FindAndGetCardInput, AddTaskInput, UpdateTaskInput, AddCardLabelInput, RemoveCardLabelInput, DeleteTaskInput
 from .cache import PlankaCache
 from .api_client import PlankaAPIClient, initialize_auth
-from .handlers import planka_get_workspace, planka_list_cards, planka_find_and_get_card, planka_get_card, planka_create_card, planka_update_card, planka_add_task, planka_update_task, planka_add_card_label, planka_remove_card_label, fetch_workspace_data
+from .handlers import planka_get_workspace, planka_list_cards, planka_find_and_get_card, planka_get_card, planka_create_card, planka_update_card, planka_add_task, planka_update_task, planka_add_card_label, planka_remove_card_label, planka_delete_task, fetch_workspace_data
 from .utils import handle_api_error, ResponseFormatter
 
 from . import instances # Import the instances module itself
@@ -36,6 +36,11 @@ router = APIRouter()
 async def get_workspace_endpoint(params: GetWorkspaceInput = Body(...)):
     """Get complete workspace structure (projects, boards, lists, labels, users)."""
     return await planka_get_workspace(params)
+
+@router.post("/planka_delete_task")
+async def delete_task_endpoint(params: DeleteTaskInput = Body(...)):
+    """Delete a task from a card."""
+    return await planka_delete_task(params)
 
 # Expose the FastMCP app as an ASGI application
 mcp_asgi_app = mcp.streamable_http_app()
