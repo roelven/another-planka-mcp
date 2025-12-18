@@ -16,6 +16,7 @@ from planka_mcp import (
     AddCardLabelInput,
     RemoveCardLabelInput,
     DeleteCardInput,
+    DeleteTaskInput,
     ResponseFormat,
     DetailLevel,
     ResponseContext
@@ -289,6 +290,39 @@ class TestUpdateTaskInput:
         """Test missing required is_completed."""
         with pytest.raises(ValidationError):
             UpdateTaskInput(task_id="task123")
+
+
+class TestDeleteTaskInput:
+    """Test DeleteTaskInput model."""
+
+    def test_valid_input(self):
+        """Test valid input for deleting a task."""
+        params = DeleteTaskInput(task_id="task1")
+        assert params.task_id == "task1"
+
+    def test_missing_task_id(self):
+        """Test missing task_id field."""
+        with pytest.raises(ValidationError) as exc_info:
+            DeleteTaskInput()
+        assert "task_id" in str(exc_info.value)
+
+    def test_empty_task_id(self):
+        """Test empty task_id field."""
+        with pytest.raises(ValidationError) as exc_info:
+            DeleteTaskInput(task_id="")
+        assert "task_id" in str(exc_info.value)
+
+    def test_task_id_too_long(self):
+        """Test task_id field exceeding maximum length."""
+        long_id = "a" * 101
+        with pytest.raises(ValidationError) as exc_info:
+            DeleteTaskInput(task_id=long_id)
+        assert "task_id" in str(exc_info.value)
+
+    def test_string_stripping(self):
+        """Test that whitespace is stripped from task_id."""
+        params = DeleteTaskInput(task_id="  task1  ")
+        assert params.task_id == "task1"
 
 
 class TestFindAndGetCardInput:

@@ -34,7 +34,8 @@ from .models import (
     UpdateTaskInput,
     AddCardLabelInput,
     RemoveCardLabelInput,
-    DeleteCardInput
+    DeleteCardInput,
+    DeleteTaskInput
 )
 from .cache import CacheEntry, PlankaCache
 from .utils import handle_api_error, ResponseFormatter, PaginationHelper
@@ -67,6 +68,7 @@ __all__ = [
     'AddCardLabelInput',
     'RemoveCardLabelInput',
     'DeleteCardInput',
+    'DeleteTaskInput',
     'CacheEntry',
     'PlankaCache',
     'handle_api_error',

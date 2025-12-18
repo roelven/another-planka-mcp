@@ -225,6 +225,21 @@ class UpdateTaskInput(BaseModel):
         description="Mark task as completed (true) or incomplete (false)"
     )
 
+class DeleteTaskInput(BaseModel):
+    """Input for deleting a task."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    task_id: str = Field(
+        ...,
+        description="ID of the task to delete",
+        min_length=1,
+        max_length=100
+    )
+
 class FindAndGetCardInput(BaseModel):
     """Input for finding and getting a card."""
     model_config = ConfigDict(

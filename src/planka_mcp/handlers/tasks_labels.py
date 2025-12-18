@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from ..models import AddTaskInput, UpdateTaskInput, AddCardLabelInput, RemoveCardLabelInput
+from ..models import AddTaskInput, UpdateTaskInput, AddCardLabelInput, RemoveCardLabelInput, DeleteTaskInput
 from ..utils import ResponseFormatter, handle_api_error
 from ..api_client import PlankaAPIClient
 from ..cache import PlankaCache
@@ -14,7 +14,7 @@ from .workspace import fetch_workspace_data
 async def planka_add_task(params: AddTaskInput) -> str:
     """Add a task (checklist item) to a card."
 
-    Creates a task in the specified task list (or creates "Tasks" list if not exists).
+    Creates a task directly on the card using the correct Planka API endpoint.
     Common pattern for tracking subtasks within cards.
 
     Args:
@@ -31,40 +31,18 @@ async def planka_add_task(params: AddTaskInput) -> str:
         return handle_api_error(RuntimeError("API client or Cache not initialized"))
 
     try:
-        # First, get the card to check for existing task lists
-        card_detail = await instances.api_client.get(f"cards/{params.card_id}")
-        included = card_detail.get("included", {})
-        task_lists = included.get("taskLists", [])
-
-        # Find or create the task list
-        task_list = None
-        task_list_name = params.task_list_name or "Tasks"
-
-        # Look for existing task list with matching name
-        for tl in task_lists:
-            if tl.get("name", "").lower() == task_list_name.lower():
-                task_list = tl
-                break
-
-        # If no task list exists, create one
-        if not task_list:
-            response = await instances.api_client.post(
-                "task-lists",
-                {"name": task_list_name, "cardId": params.card_id}
-            )
-            task_list = response.get("item", {})
-
-        # Create the task
+        # Create the task directly on the card using the correct endpoint
+        # POST /api/cards/{cardId}/tasks - as per official Planka API documentation
         task_response = await instances.api_client.post(
-            f"task-lists/{task_list['id']}/tasks",
-            {"name": params.task_name}
+            f"cards/{params.card_id}/tasks",
+            {"name": params.task_name, "position": 65535}
         )
         task = task_response.get("item", {})
 
         # Invalidate card cache
         instances.cache.invalidate_card(params.card_id)
 
-        return f"✓ Added task: **{task.get('name', 'Unnamed')}** to list '{task_list.get('name', 'Tasks')}' (Task ID: `{task.get('id', 'N/A')}`)"
+        return f"✓ Added task: **{task.get('name', 'Unnamed')}** (Task ID: `{task.get('id', 'N/A')}`)"
 
     except Exception as e:
         return handle_api_error(e)
@@ -103,6 +81,43 @@ async def planka_update_task(params: UpdateTaskInput) -> str:
         check = "[x]" if params.is_completed else "[ ]"
 
         return f"✓ Marked task as {status}: {check} **{task.get('name', 'Unnamed task')}** (ID: `{task.get('id', params.task_id)}`)"
+
+    except Exception as e:
+        return handle_api_error(e)
+
+async def planka_delete_task(params: DeleteTaskInput) -> str:
+    """Delete a task from a card."
+
+    Permanently removes a task from a card. The task cannot be recovered.
+
+    Args:
+        params (DeleteTaskInput): Task ID to delete
+
+    Returns:
+        str: Confirmation with deleted task ID
+
+    Examples:
+        - "Delete task abc123" → Removes the task permanently
+        - "Remove task xyz789" → Deletes the task from the card
+    """
+    if instances.api_client is None:
+        return handle_api_error(RuntimeError("API client not initialized"))
+
+    try:
+        # Get task details first to get task name for confirmation
+        # The API client now handles empty responses gracefully
+        task_response = await instances.api_client.get(f"tasks/{params.task_id}")
+        task = task_response.get("item", {}) if task_response else {}
+        task_name = task.get("name", f"Task {params.task_id}")
+
+        # Delete the task using DELETE /api/tasks/{taskId}
+        # The API client now handles empty responses (204 No Content) gracefully
+        await instances.api_client.delete(f"tasks/{params.task_id}")
+
+        # Note: We'd need to track card_id for cache invalidation, but for now we'll leave it
+        # The cache will expire naturally within 1 minute
+
+        return f"✓ Deleted task: **{task_name}** (ID: `{params.task_id}`)"
 
     except Exception as e:
         return handle_api_error(e)
