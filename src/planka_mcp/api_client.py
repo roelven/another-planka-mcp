@@ -74,26 +74,7 @@ class PlankaAPIClient:
 
     async def delete(self, endpoint: str) -> Dict:
         """DELETE request helper."""
-        client = await self.get_client()
-        url = f"{self.base_url}/api/{endpoint.lstrip('/')}"
-
-        try:
-            response = await client.request(
-                "DELETE",
-                url=url
-            )
-            response.raise_for_status()
-            
-            # DELETE operations may return empty responses (204 No Content)
-            # Return empty dict for successful deletes with no content
-            if response.status_code == 204:
-                return {}
-            
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            raise e
-        except Exception as e:
-            raise e
+        return await self.request("DELETE", endpoint)
 
     async def close(self):
         """Close the HTTP client."""
