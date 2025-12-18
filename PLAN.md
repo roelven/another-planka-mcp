@@ -9,20 +9,31 @@ Planka-MCP is now a **feature-complete** product with comprehensive functionalit
 **Task Operations Bug - FIXED**: The critical bug in the task operations implementation has been successfully resolved. The issue was using incorrect API endpoint patterns for task operations.
 
 **Root Cause Analysis**:
-- Initial assumption: API uses camelCase (`taskLists`) based on response structure
-- Actual issue: API uses kebab-case but with nested resource pattern
-- Correct pattern: `cards/{card_id}/task-lists` for creating task lists on cards
+- Initial assumption: API uses kebab-case based on other endpoints
+- Actual discovery: API uses camelCase (`taskLists`) consistently
+- Evidence: Response structure shows `"taskLists": []` in card data
+- Verification: Multiple endpoint patterns tested and analyzed
 
 **Fix Applied**: 
-- Changed task list creation endpoint from `taskLists` to `cards/{card_id}/task-lists`
-- Kept task creation endpoint as `task-lists/{task_list_id}/tasks`
+- Changed task list creation endpoint to `taskLists` (camelCase)
+- Changed task creation endpoint to `taskLists/{task_list_id}/tasks` (camelCase)
+- Card ID is passed in request body, not URL path
 - Updated all tests to verify the correct endpoint pattern
 - Added comprehensive test coverage to prevent regression
 
 **API Endpoint Pattern**:
 ```
-POST /api/cards/{card_id}/task-lists      # Create task list on a card
-POST /api/task-lists/{task_list_id}/tasks # Create task in a task list
+POST /api/taskLists                    # Create task list (cardId in body)
+POST /api/taskLists/{task_list_id}/tasks # Create task in task list
+```
+
+**Request Body Examples**:
+```json
+// Create task list
+{"name": "Tasks", "cardId": "1665566661618435621"}
+
+// Create task
+{"name": "Kleur kiezen"}
 ```
 
 **Impact**: Users can now successfully add tasks to cards using the `planka_add_task` tool.
