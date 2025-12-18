@@ -110,6 +110,7 @@ async def planka_delete_task(params: DeleteTaskInput) -> str:
         task_name = task.get("name", "Unknown Task")
 
         # Delete the task using DELETE /api/tasks/{taskId}
+        # The API client now handles empty responses (204 No Content) gracefully
         await instances.api_client.delete(f"tasks/{params.task_id}")
 
         # Note: We'd need to track card_id for cache invalidation, but for now we'll leave it
