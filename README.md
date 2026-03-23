@@ -12,7 +12,8 @@ Another Planka MCP Server provides you with a lightweight bridge between MCP cli
 - Create and update cards (title, description, labels, tasks).
 - Move cards between lists.
 - Efficient token usage through structured MCP tools.
-- Works with Claude Desktop and any MCP‑compatible client.
+- Works with Claude Desktop, Claude.ai, and any MCP‑compatible client.
+- Remote access via streamable-http transport and Docker deployment.
 
 Example use cases:
 - “Show all ‘In Progress’ cards across my workspace.”
@@ -86,16 +87,9 @@ PLANKA_PASSWORD=your-password
    - `PLANKA_BASE_URL`
    - `PLANKA_API_TOKEN` (recommended)
 5. Start the server:
-   ```
-   python planka_mcp.py
-   ```
-
-   **Note**: For direct MCP protocol communication (recommended for Claude Desktop), you can also run:
-   ```
+   ```bash
    python mcp_server.py
    ```
-   
-   This provides better compatibility with MCP clients and includes proper protocol handling.
 
 6. Add to Claude Desktop config:
    ```json
@@ -113,7 +107,29 @@ PLANKA_PASSWORD=your-password
    }
    ```
 
-   **Note**: Updated to use `mcp_server.py` for better MCP protocol compatibility.
+### Remote Deployment (Docker)
+
+To make the MCP server available remotely (e.g. for Claude.ai), you can deploy it with Docker using the streamable-http transport.
+
+1. Clone the repo on your server:
+   ```bash
+   git clone https://github.com/roelven/another-planka-mcp
+   cd another-planka-mcp
+   ```
+2. Create a `.env` file with your Planka credentials:
+   ```bash
+   cp .env.example .env
+   # Edit .env with PLANKA_BASE_URL and PLANKA_API_TOKEN
+   ```
+3. Start the container:
+   ```bash
+   docker compose up -d --build
+   ```
+4. The MCP server is now running on port 8000 with the streamable-http transport. Expose it via a reverse proxy or Cloudflare tunnel, then add it as a remote MCP server in Claude.ai using your server's URL.
+
+The `MCP_TRANSPORT` environment variable controls the transport mode:
+- `stdio` (default) — for local MCP clients like Claude Desktop
+- `streamable-http` — for remote access over HTTP
 
 ## Tools & Capabilities
 
@@ -190,12 +206,7 @@ venv/bin/pytest --cov=src/planka_mcp --cov-report=term-missing
 
 ### Test with MCP Inspector
 ```bash
-npx @modelcontextprotocol/inspector python planka_mcp.py
-```
-
-### Run directly
-```bash
-python planka_mcp.py
+npx @modelcontextprotocol/inspector python mcp_server.py
 ```
 
 ## Acknowledgements
