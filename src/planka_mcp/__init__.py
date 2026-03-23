@@ -4,7 +4,6 @@ Planka MCP Server - Modular Package
 This package provides tools to interact with Planka kanban boards.
 """
 
-from .server import mcp
 from .instances import api_client, cache
 from .handlers import (
     planka_get_workspace,
@@ -42,7 +41,7 @@ from .utils import handle_api_error, ResponseFormatter, PaginationHelper
 from .api_client import PlankaAPIClient
 
 __all__ = [
-    'mcp', 'api_client', 'cache',
+    'api_client', 'cache',
     'planka_get_workspace',
     'planka_list_cards',
     'planka_find_and_get_card',
