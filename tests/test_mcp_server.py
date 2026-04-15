@@ -44,11 +44,10 @@ class TestServerTransportConfig:
             assert mcp_server.auth_provider is None
 
     def test_http_transport_with_auth(self):
-        """In streamable-http mode with URL and secret, auth provider should be set."""
+        """In streamable-http mode with MCP_SERVER_URL, auth provider should be set."""
         env = {
             "MCP_TRANSPORT": "streamable-http",
             "MCP_SERVER_URL": "https://planka-mcp.example.com",
-            "MCP_CLIENT_SECRET": "test-secret",
             "PLANKA_BASE_URL": "https://planka.example.com",
             "PLANKA_API_TOKEN": "test-token",
         }
@@ -61,26 +60,11 @@ class TestServerTransportConfig:
         """In streamable-http mode without MCP_SERVER_URL, auth provider should be None."""
         env = {
             "MCP_TRANSPORT": "streamable-http",
-            "MCP_CLIENT_SECRET": "test-secret",
             "PLANKA_BASE_URL": "https://planka.example.com",
             "PLANKA_API_TOKEN": "test-token",
         }
         with patch.dict(os.environ, env, clear=False):
             os.environ.pop("MCP_SERVER_URL", None)
-            mcp_server = reload_mcp_server()
-            assert mcp_server.transport == "streamable-http"
-            assert mcp_server.auth_provider is None
-
-    def test_http_transport_without_client_secret_no_auth(self):
-        """In streamable-http mode without MCP_CLIENT_SECRET, auth provider should be None."""
-        env = {
-            "MCP_TRANSPORT": "streamable-http",
-            "MCP_SERVER_URL": "https://planka-mcp.example.com",
-            "PLANKA_BASE_URL": "https://planka.example.com",
-            "PLANKA_API_TOKEN": "test-token",
-        }
-        with patch.dict(os.environ, env, clear=False):
-            os.environ.pop("MCP_CLIENT_SECRET", None)
             mcp_server = reload_mcp_server()
             assert mcp_server.transport == "streamable-http"
             assert mcp_server.auth_provider is None
@@ -94,7 +78,6 @@ class TestOAuthProviderConfig:
         env = {
             "MCP_TRANSPORT": "streamable-http",
             "MCP_SERVER_URL": "https://planka-mcp.example.com",
-            "MCP_CLIENT_SECRET": "test-secret",
             "PLANKA_BASE_URL": "https://planka.example.com",
             "PLANKA_API_TOKEN": "test-token",
         }
@@ -109,7 +92,6 @@ class TestOAuthProviderConfig:
         env = {
             "MCP_TRANSPORT": "streamable-http",
             "MCP_SERVER_URL": "https://planka-mcp.example.com",
-            "MCP_CLIENT_SECRET": "test-secret",
             "PLANKA_BASE_URL": "https://planka.example.com",
             "PLANKA_API_TOKEN": "test-token",
         }
@@ -119,90 +101,7 @@ class TestOAuthProviderConfig:
             assert provider is not None
             assert provider.client_registration_options is not None
             assert provider.client_registration_options.enabled is True
-
-    def test_oauth_provider_is_secret_gated(self):
-        """OAuth provider should be SecretGatedOAuthProvider."""
-        env = {
-            "MCP_TRANSPORT": "streamable-http",
-            "MCP_SERVER_URL": "https://planka-mcp.example.com",
-            "MCP_CLIENT_SECRET": "test-secret",
-            "PLANKA_BASE_URL": "https://planka.example.com",
-            "PLANKA_API_TOKEN": "test-token",
-        }
-        with patch.dict(os.environ, env, clear=False):
-            mcp_server = reload_mcp_server()
-            assert isinstance(mcp_server.auth_provider, mcp_server.SecretGatedOAuthProvider)
-
-
-class TestSecretGatedRegistration:
-    """Test that DCR is gated by the client secret."""
-
-    @pytest.mark.asyncio
-    async def test_registration_with_correct_secret_succeeds(self):
-        """Client registration should succeed with the correct secret."""
-        env = {
-            "MCP_TRANSPORT": "streamable-http",
-            "MCP_SERVER_URL": "https://planka-mcp.example.com",
-            "MCP_CLIENT_SECRET": "correct-secret",
-            "PLANKA_BASE_URL": "https://planka.example.com",
-            "PLANKA_API_TOKEN": "test-token",
-        }
-        with patch.dict(os.environ, env, clear=False):
-            mcp_server = reload_mcp_server()
-            from mcp.shared.auth import OAuthClientInformationFull
-
-            await mcp_server.auth_provider.register_client(OAuthClientInformationFull(
-                client_id="test-client",
-                client_secret="correct-secret",
-                redirect_uris=["https://claude.ai/api/mcp/auth_callback"],
-                scope="planka",
-            ))
-            client = await mcp_server.auth_provider.get_client("test-client")
-            assert client is not None
-            assert client.client_id == "test-client"
-
-    @pytest.mark.asyncio
-    async def test_registration_with_wrong_secret_rejected(self):
-        """Client registration should be rejected with the wrong secret."""
-        env = {
-            "MCP_TRANSPORT": "streamable-http",
-            "MCP_SERVER_URL": "https://planka-mcp.example.com",
-            "MCP_CLIENT_SECRET": "correct-secret",
-            "PLANKA_BASE_URL": "https://planka.example.com",
-            "PLANKA_API_TOKEN": "test-token",
-        }
-        with patch.dict(os.environ, env, clear=False):
-            mcp_server = reload_mcp_server()
-            from mcp.shared.auth import OAuthClientInformationFull
-
-            with pytest.raises(ValueError, match="Invalid client secret"):
-                await mcp_server.auth_provider.register_client(OAuthClientInformationFull(
-                    client_id="attacker-client",
-                    client_secret="wrong-secret",
-                    redirect_uris=["https://evil.com/callback"],
-                    scope="planka",
-                ))
-
-    @pytest.mark.asyncio
-    async def test_registration_without_secret_rejected(self):
-        """Client registration should be rejected without a secret."""
-        env = {
-            "MCP_TRANSPORT": "streamable-http",
-            "MCP_SERVER_URL": "https://planka-mcp.example.com",
-            "MCP_CLIENT_SECRET": "correct-secret",
-            "PLANKA_BASE_URL": "https://planka.example.com",
-            "PLANKA_API_TOKEN": "test-token",
-        }
-        with patch.dict(os.environ, env, clear=False):
-            mcp_server = reload_mcp_server()
-            from mcp.shared.auth import OAuthClientInformationFull
-
-            with pytest.raises(ValueError, match="Invalid client secret"):
-                await mcp_server.auth_provider.register_client(OAuthClientInformationFull(
-                    client_id="no-secret-client",
-                    redirect_uris=["https://evil.com/callback"],
-                    scope="planka",
-                ))
+            assert provider.client_registration_options.valid_scopes == ["planka"]
 
 
 class TestFastMCPInstance:
