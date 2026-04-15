@@ -26,13 +26,27 @@ from planka_mcp.models import (
     AddCardLabelInput, RemoveCardLabelInput, DeleteCardInput, DeleteTaskInput
 )
 from mcp.server.fastmcp import FastMCP
+from fastmcp.server.auth.providers.in_memory import InMemoryOAuthProvider
+from mcp.server.auth.settings import ClientRegistrationOptions
 
 # Global instances
 api_client = None
 cache = None
 
-# Create FastMCP instance
-mcp = FastMCP("planka_mcp")
+# Configure OAuth authentication for remote (HTTP) transport
+mcp_transport = os.getenv("MCP_TRANSPORT", "stdio")
+if mcp_transport == "http":
+    auth_provider = InMemoryOAuthProvider(
+        base_url=os.getenv("MCP_SERVER_URL"),
+        client_registration_options=ClientRegistrationOptions(
+            enabled=True,
+            valid_scopes=["planka"],
+        ),
+        required_scopes=["planka"],
+    )
+    mcp = FastMCP("planka_mcp", auth=auth_provider)
+else:
+    mcp = FastMCP("planka_mcp")
 
 # Register MCP tools
 @mcp.tool("planka_get_workspace")
@@ -133,7 +147,13 @@ async def main():
     """Main entry point for MCP server."""
     try:
         await initialize_server()
-        await mcp.run_stdio_async()
+        if mcp_transport == "http":
+            host = os.getenv("MCP_HOST", "0.0.0.0")
+            port = int(os.getenv("MCP_PORT", "8000"))
+            print(f"Starting HTTP transport on {host}:{port}", file=sys.stderr, flush=True)
+            mcp.run(transport="streamable-http", host=host, port=port)
+        else:
+            await mcp.run_stdio_async()
     except Exception as e:
         print(f"Server error: {e}", file=sys.stderr, flush=True)
         raise

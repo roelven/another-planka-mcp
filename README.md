@@ -115,6 +115,37 @@ PLANKA_PASSWORD=your-password
 
    **Note**: Updated to use `mcp_server.py` for better MCP protocol compatibility.
 
+### Remote Access (Claude.ai via HTTP + OAuth)
+
+For remote access (e.g. Claude.ai through a Cloudflare Tunnel), the server supports streamable HTTP transport with built-in OAuth 2.0 authentication.
+
+1. Set environment variables in `.env`:
+   ```
+   MCP_TRANSPORT=http
+   MCP_SERVER_URL=https://planka-mcp.yourdomain.com
+   ```
+
+2. Start the server:
+   ```bash
+   python mcp_server.py
+   ```
+   The server starts on `0.0.0.0:8000` by default (configurable via `MCP_HOST` and `MCP_PORT`).
+
+3. Expose via Cloudflare Tunnel (or similar) pointing to `localhost:8000`.
+
+4. In the Claude.ai MCP connector settings:
+   - Set the endpoint URL to `https://planka-mcp.yourdomain.com/mcp`
+   - Leave OAuth client ID and secret empty — Claude.ai uses Dynamic Client Registration to auto-register
+   - On first connection, Claude.ai completes the OAuth flow automatically
+
+**OAuth endpoints** provided automatically:
+- `/.well-known/oauth-authorization-server` — discovery metadata
+- `/authorize` — authorization code flow
+- `/token` — token exchange
+- `/register` — dynamic client registration
+
+**Note**: `InMemoryOAuthProvider` stores tokens in memory. Server restarts invalidate all tokens (Claude.ai will re-authenticate automatically). This is fine for single-user use.
+
 ## Tools & Capabilities
 
 | Tool                         | Type   | Purpose                                                |
@@ -122,8 +153,15 @@ PLANKA_PASSWORD=your-password
 | `planka_get_workspace`      | Read   | Retrieve boards, lists, users, labels                  |
 | `planka_list_cards`         | Read   | Filter and list cards with detail levels               |
 | `planka_find_and_get_card`  | Read   | Search and fetch a specific card                       |
+| `planka_get_card`           | Read   | Get detailed information about a specific card         |
 | `planka_create_card`        | Write  | Create a new card                                      |
 | `planka_update_card`        | Write  | Update an existing card                                |
+| `planka_delete_card`        | Write  | Delete a card                                          |
+| `planka_add_task`           | Write  | Add a task to a card                                   |
+| `planka_update_task`        | Write  | Update a task's completion status                      |
+| `planka_delete_task`        | Write  | Delete a task from a card                              |
+| `planka_add_card_label`     | Write  | Add a label to a card                                  |
+| `planka_remove_card_label`  | Write  | Remove a label from a card                             |
 
 ## Usage Examples
 Ask your assistant:
