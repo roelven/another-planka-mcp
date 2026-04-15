@@ -25,10 +25,32 @@ from planka_mcp.models import (
     UpdateCardInput, FindAndGetCardInput, AddTaskInput, UpdateTaskInput,
     AddCardLabelInput, RemoveCardLabelInput, DeleteCardInput, DeleteTaskInput
 )
+import hmac
 from fastmcp import FastMCP
 from fastmcp.server.auth.providers.in_memory import InMemoryOAuthProvider
 from mcp.server.auth.settings import ClientRegistrationOptions
 from mcp.shared.auth import OAuthClientInformationFull
+
+
+class SecretGatedOAuthProvider(InMemoryOAuthProvider):
+    """OAuth provider that only allows registration with the correct client secret.
+
+    Claude.ai requires Dynamic Client Registration (DCR) to be enabled.
+    This subclass allows DCR but rejects any registration attempt that
+    doesn't present the pre-configured client secret, preventing
+    unauthorized clients from registering.
+    """
+
+    def __init__(self, allowed_client_secret: str, **kwargs):
+        super().__init__(**kwargs)
+        self._allowed_client_secret = allowed_client_secret
+
+    async def register_client(self, client_info: OAuthClientInformationFull) -> None:
+        if not client_info.client_secret or not hmac.compare_digest(
+            client_info.client_secret, self._allowed_client_secret
+        ):
+            raise ValueError("Invalid client secret")
+        await super().register_client(client_info)
 
 
 @asynccontextmanager
@@ -40,23 +62,6 @@ async def server_lifespan(server: FastMCP):
         base_url = os.getenv("PLANKA_BASE_URL")
         instances.api_client = PlankaAPIClient(base_url, token)
         instances.cache = PlankaCache()
-
-        # Pre-register the authorized OAuth client
-        if auth_provider is not None:
-            client_id = os.getenv("MCP_CLIENT_ID")
-            client_secret = os.getenv("MCP_CLIENT_SECRET")
-            if client_id and client_secret:
-                await auth_provider.register_client(OAuthClientInformationFull(
-                    client_id=client_id,
-                    client_secret=client_secret,
-                    client_name="Claude.ai",
-                    redirect_uris=["https://claude.ai/api/mcp/auth_callback"],
-                    scope="planka",
-                    token_endpoint_auth_method="client_secret_post",
-                ))
-                print("OAuth client pre-registered", file=sys.stderr, flush=True)
-            else:
-                print("WARNING: MCP_CLIENT_ID/MCP_CLIENT_SECRET not set, no OAuth clients registered", file=sys.stderr, flush=True)
 
         print(f"Planka MCP Server initialized, connected to: {base_url}", file=sys.stderr, flush=True)
         yield {}
@@ -74,15 +79,19 @@ transport = os.getenv("MCP_TRANSPORT", "stdio")
 auth_provider = None
 if transport == "streamable-http":
     server_url = os.getenv("MCP_SERVER_URL")
-    if server_url:
-        auth_provider = InMemoryOAuthProvider(
+    client_secret = os.getenv("MCP_CLIENT_SECRET")
+    if server_url and client_secret:
+        auth_provider = SecretGatedOAuthProvider(
+            allowed_client_secret=client_secret,
             base_url=server_url,
             client_registration_options=ClientRegistrationOptions(
-                enabled=False,  # Disable open registration
+                enabled=True,  # Claude.ai requires DCR
                 valid_scopes=["planka"],
             ),
             required_scopes=["planka"],
         )
+    elif server_url:
+        print("WARNING: MCP_CLIENT_SECRET not set, OAuth disabled", file=sys.stderr, flush=True)
 
 # Create FastMCP instance with dual transport support
 mcp = FastMCP(
