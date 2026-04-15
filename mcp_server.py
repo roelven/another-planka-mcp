@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Planka MCP Server - Direct MCP Protocol Entry Point
+Planka MCP Server
 
-This is a simplified entry point specifically for MCP protocol communication.
-It bypasses the FastAPI layer and connects directly to the MCP protocol.
+Supports both stdio (for local Claude Code) and streamable-http (for remote access)
+transport modes, controlled by the MCP_TRANSPORT environment variable.
 """
 import os
 import sys
-import asyncio
+from contextlib import asynccontextmanager
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
@@ -25,28 +25,57 @@ from planka_mcp.models import (
     UpdateCardInput, FindAndGetCardInput, AddTaskInput, UpdateTaskInput,
     AddCardLabelInput, RemoveCardLabelInput, DeleteCardInput, DeleteTaskInput
 )
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from fastmcp.server.auth.providers.in_memory import InMemoryOAuthProvider
 from mcp.server.auth.settings import ClientRegistrationOptions
 
-# Global instances
-api_client = None
-cache = None
+
+@asynccontextmanager
+async def server_lifespan(server: FastMCP):
+    """Initialize and clean up server resources."""
+    import planka_mcp.instances as instances
+    try:
+        token = await initialize_auth()
+        base_url = os.getenv("PLANKA_BASE_URL")
+        instances.api_client = PlankaAPIClient(base_url, token)
+        instances.cache = PlankaCache()
+        print(f"Planka MCP Server initialized, connected to: {base_url}", file=sys.stderr, flush=True)
+        yield {}
+    except Exception as e:
+        print(f"Failed to initialize server: {e}", file=sys.stderr, flush=True)
+        raise
+    finally:
+        if instances.api_client:
+            await instances.api_client.close()
+        print("Planka MCP Server shut down", file=sys.stderr, flush=True)
+
 
 # Configure OAuth authentication for remote (HTTP) transport
-mcp_transport = os.getenv("MCP_TRANSPORT", "stdio")
-if mcp_transport == "http":
-    auth_provider = InMemoryOAuthProvider(
-        base_url=os.getenv("MCP_SERVER_URL"),
-        client_registration_options=ClientRegistrationOptions(
-            enabled=True,
-            valid_scopes=["planka"],
-        ),
-        required_scopes=["planka"],
-    )
-    mcp = FastMCP("planka_mcp", auth=auth_provider)
-else:
-    mcp = FastMCP("planka_mcp")
+transport = os.getenv("MCP_TRANSPORT", "stdio")
+auth_provider = None
+if transport == "streamable-http":
+    server_url = os.getenv("MCP_SERVER_URL")
+    if server_url:
+        auth_provider = InMemoryOAuthProvider(
+            base_url=server_url,
+            client_registration_options=ClientRegistrationOptions(
+                enabled=True,
+                valid_scopes=["planka"],
+            ),
+            required_scopes=["planka"],
+        )
+
+# Create FastMCP instance with dual transport support
+mcp = FastMCP(
+    "planka_mcp",
+    host="0.0.0.0",
+    port=8000,
+    stateless_http=True,
+    streamable_http_path="/",
+    lifespan=server_lifespan,
+    auth=auth_provider,
+)
+
 
 # Register MCP tools
 @mcp.tool("planka_get_workspace")
@@ -109,56 +138,6 @@ async def mcp_delete_task(params: DeleteTaskInput):
     """Delete a task from a card."""
     return await planka_delete_task(params)
 
-async def initialize_server():
-    """Initialize the server components."""
-    global api_client, cache
-    
-    try:
-        # Initialize authentication
-        token = await initialize_auth()
-        base_url = os.getenv("PLANKA_BASE_URL")
-        
-        # Create API client and cache
-        api_client = PlankaAPIClient(base_url, token)
-        cache = PlankaCache()
-        
-        # Inject instances into the handlers module
-        import planka_mcp.instances
-        planka_mcp.instances.api_client = api_client
-        planka_mcp.instances.cache = cache
-        
-        print(f"Planka MCP Server initialized successfully", file=sys.stderr, flush=True)
-        print(f"Connected to: {base_url}", file=sys.stderr, flush=True)
-        print("Waiting for MCP protocol messages...", file=sys.stderr, flush=True)
-        
-    except Exception as e:
-        print(f"Failed to initialize server: {e}", file=sys.stderr, flush=True)
-        raise
-
-async def cleanup_server():
-    """Clean up server resources."""
-    global api_client
-    
-    if api_client:
-        await api_client.close()
-        print("Planka MCP Server shut down successfully", file=sys.stderr, flush=True)
-
-async def main():
-    """Main entry point for MCP server."""
-    try:
-        await initialize_server()
-        if mcp_transport == "http":
-            host = os.getenv("MCP_HOST", "0.0.0.0")
-            port = int(os.getenv("MCP_PORT", "8000"))
-            print(f"Starting HTTP transport on {host}:{port}", file=sys.stderr, flush=True)
-            mcp.run(transport="streamable-http", host=host, port=port)
-        else:
-            await mcp.run_stdio_async()
-    except Exception as e:
-        print(f"Server error: {e}", file=sys.stderr, flush=True)
-        raise
-    finally:
-        await cleanup_server()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run(transport=transport)

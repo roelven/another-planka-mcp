@@ -121,7 +121,7 @@ For remote access (e.g. Claude.ai through a Cloudflare Tunnel), the server suppo
 
 1. Set environment variables in `.env`:
    ```
-   MCP_TRANSPORT=http
+   MCP_TRANSPORT=streamable-http
    MCP_SERVER_URL=https://planka-mcp.yourdomain.com
    ```
 
@@ -134,7 +134,7 @@ For remote access (e.g. Claude.ai through a Cloudflare Tunnel), the server suppo
 3. Expose via Cloudflare Tunnel (or similar) pointing to `localhost:8000`.
 
 4. In the Claude.ai MCP connector settings:
-   - Set the endpoint URL to `https://planka-mcp.yourdomain.com/mcp`
+   - Set the endpoint URL to `https://planka-mcp.yourdomain.com`
    - Leave OAuth client ID and secret empty — Claude.ai uses Dynamic Client Registration to auto-register
    - On first connection, Claude.ai completes the OAuth flow automatically
 
