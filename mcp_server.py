@@ -41,6 +41,23 @@ async def server_lifespan(server: FastMCP):
         instances.api_client = PlankaAPIClient(base_url, token)
         instances.cache = PlankaCache()
 
+        # Pre-register the authorized OAuth client
+        if auth_provider is not None:
+            client_id = os.getenv("MCP_CLIENT_ID")
+            client_secret = os.getenv("MCP_CLIENT_SECRET")
+            if client_id and client_secret:
+                await auth_provider.register_client(OAuthClientInformationFull(
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    client_name="Claude.ai",
+                    redirect_uris=["https://claude.ai/api/mcp/auth_callback"],
+                    scope="planka",
+                    token_endpoint_auth_method="client_secret_post",
+                ))
+                print(f"OAuth client pre-registered (id={client_id})", file=sys.stderr, flush=True)
+            else:
+                print("WARNING: MCP_CLIENT_ID/MCP_CLIENT_SECRET not set, OAuth will reject all clients", file=sys.stderr, flush=True)
+
         print(f"Planka MCP Server initialized, connected to: {base_url}", file=sys.stderr, flush=True)
         yield {}
     except Exception as e:
@@ -61,7 +78,7 @@ if transport == "streamable-http":
         auth_provider = InMemoryOAuthProvider(
             base_url=server_url,
             client_registration_options=ClientRegistrationOptions(
-                enabled=True,
+                enabled=False,  # No open registration; client is pre-registered
                 valid_scopes=["planka"],
             ),
             required_scopes=["planka"],

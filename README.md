@@ -117,34 +117,54 @@ PLANKA_PASSWORD=your-password
 
 ### Remote Access (Claude.ai via HTTP + OAuth)
 
-For remote access (e.g. Claude.ai through a Cloudflare Tunnel), the server supports streamable HTTP transport with built-in OAuth 2.0 authentication.
+For remote access (e.g. Claude.ai through a Cloudflare Tunnel), the server supports streamable HTTP transport with OAuth 2.0 authentication. Only clients with valid credentials can connect.
 
-1. Set environment variables in `.env`:
-   ```
-   MCP_TRANSPORT=streamable-http
-   MCP_SERVER_URL=https://planka-mcp.yourdomain.com
-   ```
+#### 1. Generate OAuth client credentials
 
-2. Start the server:
-   ```bash
-   python mcp_server.py
-   ```
-   The server starts on `0.0.0.0:8000` by default (configurable via `MCP_HOST` and `MCP_PORT`).
+Generate a client ID and secret using Python:
 
-3. Expose via Cloudflare Tunnel (or similar) pointing to `localhost:8000`.
+```bash
+python -c "import secrets; print(f'MCP_CLIENT_ID={secrets.token_urlsafe(16)}'); print(f'MCP_CLIENT_SECRET={secrets.token_urlsafe(32)}')"
+```
 
-4. In the Claude.ai MCP connector settings:
-   - Set the endpoint URL to `https://planka-mcp.yourdomain.com`
-   - Leave OAuth client ID and secret empty — Claude.ai uses Dynamic Client Registration to auto-register
-   - On first connection, Claude.ai completes the OAuth flow automatically
+This outputs two values. Save them — you'll need them for both the server config and the Claude.ai connector.
 
-**OAuth endpoints** provided automatically:
-- `/.well-known/oauth-authorization-server` — discovery metadata
-- `/authorize` — authorization code flow
-- `/token` — token exchange
-- `/register` — dynamic client registration
+#### 2. Configure the server
 
-**Note**: `InMemoryOAuthProvider` stores tokens in memory. Server restarts invalidate all tokens (Claude.ai will re-authenticate automatically). This is fine for single-user use.
+Add to your `.env`:
+```
+MCP_TRANSPORT=streamable-http
+MCP_SERVER_URL=https://planka-mcp.yourdomain.com
+MCP_CLIENT_ID=<generated client ID>
+MCP_CLIENT_SECRET=<generated client secret>
+```
+
+#### 3. Start the server
+
+```bash
+python mcp_server.py
+```
+
+The server starts on `0.0.0.0:8000` by default. Expose via Cloudflare Tunnel (or similar) pointing to `localhost:8000`.
+
+#### 4. Configure Claude.ai
+
+In the Claude.ai MCP connector settings:
+- **URL**: `https://planka-mcp.yourdomain.com`
+- **Client ID**: the `MCP_CLIENT_ID` value from step 1
+- **Client Secret**: the `MCP_CLIENT_SECRET` value from step 1
+
+Claude.ai will complete the OAuth authorization code flow and obtain a Bearer token automatically.
+
+#### Rotating credentials
+
+To rotate credentials, generate new values (step 1), update `.env` on the server, restart the container, and update the Claude.ai connector settings to match. Existing tokens are invalidated on restart.
+
+#### Limitations
+
+- **Single client**: The server supports one pre-registered OAuth client. This is sufficient for a single-user setup with one MCP connector (e.g. Claude.ai). Supporting multiple clients would require changes to the registration logic.
+- **In-memory tokens**: Tokens are stored in memory. Server restarts invalidate all tokens — Claude.ai will re-authenticate automatically.
+- **Auto-approved authorization**: The `/authorize` endpoint auto-approves requests for the registered client. Access control relies on the client credentials being secret. Keep `MCP_CLIENT_SECRET` confidential.
 
 ## Tools & Capabilities
 

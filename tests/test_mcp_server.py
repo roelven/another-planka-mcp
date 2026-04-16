@@ -87,8 +87,8 @@ class TestOAuthProviderConfig:
             assert provider is not None
             assert provider.required_scopes == ["planka"]
 
-    def test_oauth_provider_has_dcr_enabled(self):
-        """OAuth provider should have DCR enabled (Claude.ai requires it)."""
+    def test_oauth_provider_has_dcr_disabled(self):
+        """OAuth provider should have DCR disabled (client is pre-registered)."""
         env = {
             "MCP_TRANSPORT": "streamable-http",
             "MCP_SERVER_URL": "https://planka-mcp.example.com",
@@ -100,8 +100,7 @@ class TestOAuthProviderConfig:
             provider = mcp_server.auth_provider
             assert provider is not None
             assert provider.client_registration_options is not None
-            assert provider.client_registration_options.enabled is True
-            assert provider.client_registration_options.valid_scopes == ["planka"]
+            assert provider.client_registration_options.enabled is False
 
 
 class TestFastMCPInstance:
@@ -150,6 +149,60 @@ class TestFastMCPInstance:
 
 class TestServerLifespan:
     """Test the server lifespan context manager."""
+
+    @pytest.mark.asyncio
+    async def test_lifespan_registers_oauth_client(self):
+        """Lifespan should pre-register the OAuth client when credentials are set."""
+        env = {
+            "MCP_TRANSPORT": "streamable-http",
+            "MCP_SERVER_URL": "https://planka-mcp.example.com",
+            "MCP_CLIENT_ID": "test-client-id",
+            "MCP_CLIENT_SECRET": "test-client-secret",
+            "PLANKA_BASE_URL": "https://planka.example.com",
+            "PLANKA_API_TOKEN": "test-token",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            mcp_server = reload_mcp_server()
+
+            with patch("mcp_server.initialize_auth", new_callable=AsyncMock, return_value="test-token"):
+                with patch("mcp_server.PlankaAPIClient") as mock_client_cls:
+                    mock_client = MagicMock()
+                    mock_client.close = AsyncMock()
+                    mock_client_cls.return_value = mock_client
+
+                    async with mcp_server.server_lifespan(mcp_server.mcp):
+                        client = await mcp_server.auth_provider.get_client("test-client-id")
+                        assert client is not None
+                        assert client.client_id == "test-client-id"
+                        assert client.client_secret == "test-client-secret"
+                        assert client.scope == "planka"
+
+    @pytest.mark.asyncio
+    async def test_lifespan_warns_without_credentials(self, capsys):
+        """Lifespan should warn when OAuth is enabled but credentials are missing."""
+        env = {
+            "MCP_TRANSPORT": "streamable-http",
+            "MCP_SERVER_URL": "https://planka-mcp.example.com",
+            "PLANKA_BASE_URL": "https://planka.example.com",
+            "PLANKA_API_TOKEN": "test-token",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            os.environ.pop("MCP_CLIENT_ID", None)
+            os.environ.pop("MCP_CLIENT_SECRET", None)
+            mcp_server = reload_mcp_server()
+
+            with patch("mcp_server.initialize_auth", new_callable=AsyncMock, return_value="test-token"):
+                with patch("mcp_server.PlankaAPIClient") as mock_client_cls:
+                    mock_client = MagicMock()
+                    mock_client.close = AsyncMock()
+                    mock_client_cls.return_value = mock_client
+
+                    async with mcp_server.server_lifespan(mcp_server.mcp):
+                        pass
+
+                    captured = capsys.readouterr()
+                    assert "WARNING" in captured.err
+                    assert "MCP_CLIENT_ID" in captured.err
 
     @pytest.mark.asyncio
     async def test_lifespan_initializes_instances(self):
