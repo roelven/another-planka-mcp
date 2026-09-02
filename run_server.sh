@@ -3,6 +3,7 @@
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR" || exit 1
 
 # Activate virtual environment if it exists, otherwise use system Python
 if [ -d "$SCRIPT_DIR/venv" ]; then
