@@ -31,11 +31,28 @@ async def planka_add_task(params: AddTaskInput) -> str:
         return handle_api_error(RuntimeError("API client or Cache not initialized"))
 
     try:
-        # Create the task directly on the card using the correct endpoint
-        # POST /api/cards/{cardId}/tasks - as per official Planka API documentation
+        card_response = await instances.api_client.get(f"cards/{params.card_id}")
+        task_list_name = params.task_list_name or "Tasks"
+        task_lists = card_response.get("included", {}).get("taskLists", [])
+        task_list = next(
+            (item for item in task_lists if item.get("name") == task_list_name),
+            None,
+        )
+
+        if task_list is None:
+            task_list_response = await instances.api_client.post(
+                f"cards/{params.card_id}/task-lists",
+                {"name": task_list_name, "position": 65535},
+            )
+            task_list = task_list_response.get("item", {})
+
+        task_list_id = task_list.get("id")
+        if not task_list_id:
+            raise RuntimeError("Planka did not return a task list ID")
+
         task_response = await instances.api_client.post(
-            f"cards/{params.card_id}/tasks",
-            {"name": params.task_name, "position": 65535}
+            f"task-lists/{task_list_id}/tasks",
+            {"name": params.task_name, "position": 65535},
         )
         task = task_response.get("item", {})
 
