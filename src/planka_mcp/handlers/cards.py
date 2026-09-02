@@ -145,6 +145,7 @@ async def planka_get_card(params: GetCardInput) -> str:
 
             # Merge included data into card
             full_card['taskLists'] = included.get('taskLists', [])
+            full_card['tasks'] = included.get('tasks', [])
             full_card['comments'] = included.get('comments', [])
             full_card['attachments'] = included.get('attachments', [])
             full_card['_included_labels'] = included.get('labels', [])

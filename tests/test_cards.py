@@ -284,6 +284,39 @@ class TestPlankaGetCard:
             assert parsed["name"] == "Test Card"
 
     @pytest.mark.asyncio
+    async def test_get_card_includes_top_level_tasks(
+        self, mock_planka_api_client, mock_cache, sample_workspace_data
+    ):
+        """Test tasks from Planka 2.x's included response are returned."""
+        async def fetch_card(_card_id, callback):
+            return await callback()
+
+        mock_cache.get_card.side_effect = fetch_card
+        mock_cache.get_workspace.return_value = sample_workspace_data
+        mock_planka_api_client.get.return_value = {
+            "item": {
+                "id": "card1",
+                "name": "Test Card",
+                "listId": "list1",
+                "boardId": "board1",
+            },
+            "included": {
+                "taskLists": [{"id": "tasklist1", "name": "Tasks"}],
+                "tasks": [{"id": "task1", "name": "Task 1", "taskListId": "tasklist1"}],
+            },
+        }
+
+        with patch("planka_mcp.instances.api_client", mock_planka_api_client), \
+             patch("planka_mcp.instances.cache", mock_cache):
+            params = GetCardInput(card_id="card1", response_format=ResponseFormat.JSON)
+            result = await planka_get_card(params)
+            parsed = json.loads(result)
+
+            assert parsed["tasks"] == [
+                {"id": "task1", "name": "Task 1", "taskListId": "tasklist1"}
+            ]
+
+    @pytest.mark.asyncio
     async def test_get_card_not_initialized(self):
         """Test get_card when API client or cache is not initialized."""
         # Test when API client is None
@@ -600,4 +633,3 @@ class TestPlankaDeleteCard:
             params = UpdateCardInput(card_id="card1")
             result = await planka_update_card(params)
             assert "Updated card" in result
-
